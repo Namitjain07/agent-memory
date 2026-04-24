@@ -52,6 +52,10 @@ export class PostgresAdapter implements MemoryAdapter {
 
   private readonly autoCreateExtension: boolean;
 
+  /**
+   * initPromise is set synchronously before the first await to prevent
+   * concurrent initialize() calls racing each other.
+   */
   private initPromise: Promise<void> | null = null;
 
   constructor(options: PostgresAdapterOptions = {}) {
@@ -175,17 +179,29 @@ export class PostgresAdapter implements MemoryAdapter {
     return result.rows.map((row) => this.fromRow(row as unknown as MemoryRow));
   }
 
+  /**
+   * Delete all memory items for a given session.
+   */
+  async clear(sessionId: string): Promise<void> {
+    await this.ensureInitialized();
+    await this.client!.query(
+      `DELETE FROM ${this.tableName} WHERE session_id = $1`,
+      [sessionId]
+    );
+  }
+
   async close(): Promise<void> {
     if (this.pool?.end) {
       await this.pool.end();
     }
   }
 
-  private async ensureInitialized(): Promise<void> {
+  private ensureInitialized(): Promise<void> {
+    // Set initPromise synchronously before any await to prevent concurrent races
     if (!this.initPromise) {
       this.initPromise = this.initialize();
     }
-    await this.initPromise;
+    return this.initPromise;
   }
 
   private async initialize(): Promise<void> {
@@ -223,6 +239,9 @@ export class PostgresAdapter implements MemoryAdapter {
       );
       CREATE INDEX IF NOT EXISTS idx_${this.tableName}_session
       ON ${this.tableName}(session_id, timestamp);
+      CREATE INDEX IF NOT EXISTS idx_${this.tableName}_embedding_hnsw
+      ON ${this.tableName} USING hnsw (embedding vector_cosine_ops)
+      WHERE embedding IS NOT NULL;
     `);
   }
 

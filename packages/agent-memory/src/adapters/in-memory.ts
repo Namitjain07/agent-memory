@@ -7,38 +7,47 @@ import type {
 import type { MemoryItem } from "../types/memory";
 import { cosineSimilarity, normalizeSimilarity } from "../utils/math";
 
+/**
+ * In-memory adapter backed by stable Maps.
+ * Uses a `Map<id, MemoryItem>` as primary store and a `Map<sessionId, Set<id>>`
+ * for session grouping — no fragile index arithmetic.
+ */
 export class InMemoryAdapter implements MemoryAdapter {
-  private readonly bySession = new Map<string, MemoryItem[]>();
+  /** Primary store: id → item */
+  private readonly store = new Map<string, MemoryItem>();
 
-  private readonly byId = new Map<string, { sessionId: string; index: number }>();
+  /** Session index: sessionId → ordered list of ids (insertion order) */
+  private readonly sessionIndex = new Map<string, string[]>();
 
   async add(item: MemoryItem): Promise<void> {
-    const sessionItems = this.bySession.get(item.sessionId) ?? [];
-    sessionItems.push({ ...item });
-    this.bySession.set(item.sessionId, sessionItems);
-    this.byId.set(item.id, {
-      sessionId: item.sessionId,
-      index: sessionItems.length - 1
-    });
+    this.store.set(item.id, { ...item });
+
+    const ids = this.sessionIndex.get(item.sessionId) ?? [];
+    ids.push(item.id);
+    this.sessionIndex.set(item.sessionId, ids);
   }
 
   async search(
     queryVector: number[],
     options: MemorySearchOptions
   ): Promise<MemorySearchCandidate[]> {
-    const items = (this.bySession.get(options.sessionId) ?? []).filter((item) =>
-      options.kinds ? options.kinds.includes(item.kind) : true
-    );
+    const ids = this.sessionIndex.get(options.sessionId) ?? [];
+    const items: MemoryItem[] = [];
+
+    for (const id of ids) {
+      const item = this.store.get(id);
+      if (!item) continue;
+      if (options.kinds && !options.kinds.includes(item.kind)) continue;
+      items.push(item);
+    }
 
     const scored = items
       .map((item) => {
-        const similarity = item.embedding
-          ? normalizeSimilarity(cosineSimilarity(queryVector, item.embedding))
-          : 0;
-        return {
-          item: { ...item },
-          similarity
-        };
+        const similarity =
+          item.embedding && item.embedding.length === queryVector.length
+            ? normalizeSimilarity(cosineSimilarity(queryVector, item.embedding))
+            : 0;
+        return { item: { ...item }, similarity };
       })
       .sort((a, b) => b.similarity - a.similarity);
 
@@ -47,54 +56,42 @@ export class InMemoryAdapter implements MemoryAdapter {
   }
 
   async delete(id: string): Promise<void> {
-    const location = this.byId.get(id);
-    if (!location) {
-      return;
-    }
+    const item = this.store.get(id);
+    if (!item) return;
 
-    const sessionItems = this.bySession.get(location.sessionId);
-    if (!sessionItems) {
-      this.byId.delete(id);
-      return;
-    }
+    this.store.delete(id);
 
-    sessionItems.splice(location.index, 1);
-    this.byId.delete(id);
-
-    for (let i = location.index; i < sessionItems.length; i += 1) {
-      this.byId.set(sessionItems[i]!.id, {
-        sessionId: location.sessionId,
-        index: i
-      });
+    const ids = this.sessionIndex.get(item.sessionId);
+    if (ids) {
+      const idx = ids.indexOf(id);
+      if (idx !== -1) ids.splice(idx, 1);
     }
   }
 
   async update(id: string, data: MemoryUpdate): Promise<void> {
-    const location = this.byId.get(id);
-    if (!location) {
-      return;
-    }
+    const existing = this.store.get(id);
+    if (!existing) return;
 
-    const sessionItems = this.bySession.get(location.sessionId);
-    if (!sessionItems) {
-      return;
-    }
-
-    const existing = sessionItems[location.index];
-    if (!existing) {
-      return;
-    }
-
-    sessionItems[location.index] = {
-      ...existing,
-      ...data
-    } as MemoryItem;
+    this.store.set(id, { ...existing, ...data } as MemoryItem);
   }
 
   async getBySession(sessionId: string): Promise<MemoryItem[]> {
-    const items = this.bySession.get(sessionId) ?? [];
-    return items
-      .map((item) => ({ ...item }))
-      .sort((a, b) => a.timestamp - b.timestamp);
+    const ids = this.sessionIndex.get(sessionId) ?? [];
+    const items: MemoryItem[] = [];
+
+    for (const id of ids) {
+      const item = this.store.get(id);
+      if (item) items.push({ ...item });
+    }
+
+    return items.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  async clear(sessionId: string): Promise<void> {
+    const ids = this.sessionIndex.get(sessionId) ?? [];
+    for (const id of ids) {
+      this.store.delete(id);
+    }
+    this.sessionIndex.delete(sessionId);
   }
 }

@@ -6,9 +6,12 @@ import {
   type AgentMemoryOptions,
   type MemoryItem,
   type MemoryMessage,
+  type MemoryStats,
   type RecallOptions,
   type RecallResult,
-  type RememberInput
+  type RememberInput,
+  type SummariseOptions,
+  type MemorySummary
 } from "@namitjain.india/agent-memory";
 
 export interface UseMemoryOptions extends Omit<AgentMemoryOptions, "defaultSessionId"> {
@@ -19,6 +22,8 @@ export interface UseMemoryOptions extends Omit<AgentMemoryOptions, "defaultSessi
 export interface UseMemoryResult {
   messages: MemoryMessage[];
   setMessages: Dispatch<SetStateAction<MemoryMessage[]>>;
+  isLoading: boolean;
+  error: Error | null;
   remember: (input: Omit<RememberInput, "sessionId">) => Promise<MemoryItem>;
   recall: (query: string, options?: Omit<RecallOptions, "sessionId">) => Promise<RecallResult[]>;
   forget: (id: string) => Promise<void>;
@@ -26,6 +31,9 @@ export interface UseMemoryResult {
     messages: MemoryMessage[],
     options?: Omit<RecallOptions, "sessionId"> & { query?: string }
   ) => Promise<MemoryMessage[]>;
+  summarise: (options?: Omit<SummariseOptions, "sessionId">) => Promise<MemorySummary | null>;
+  clearSession: () => Promise<void>;
+  stats: () => Promise<MemoryStats>;
   memory: AgentMemory;
 }
 
@@ -37,6 +45,8 @@ export function useMemory(
   const [messages, setMessages] = useState<MemoryMessage[]>(
     initialMessages ?? []
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const memoryRef = useRef<AgentMemory>(
     providedMemory ??
@@ -48,57 +58,102 @@ export function useMemory(
   );
   const memory = memoryRef.current;
 
-  const remember = useCallback(
-    async (input: Omit<RememberInput, "sessionId">): Promise<MemoryItem> => {
-      const item = await memory.remember({
-        ...input,
-        sessionId
-      } as RememberInput);
-
-      if (item.kind === "entry") {
-        setMessages((previous) => [
-          ...previous,
-          { role: item.role, content: item.content }
-        ]);
-      }
-
-      return item;
+  const wrapAsync = useCallback(
+    <T>(fn: () => Promise<T>): Promise<T> => {
+      setIsLoading(true);
+      setError(null);
+      return fn()
+        .catch((err: unknown) => {
+          const e = err instanceof Error ? err : new Error(String(err));
+          setError(e);
+          throw e;
+        })
+        .finally(() => setIsLoading(false));
     },
-    [memory, sessionId]
+    []
+  );
+
+  const remember = useCallback(
+    (input: Omit<RememberInput, "sessionId">): Promise<MemoryItem> =>
+      wrapAsync(async () => {
+        const item = await memory.remember({
+          ...input,
+          sessionId
+        } as RememberInput);
+
+        if (item.kind === "entry") {
+          setMessages((previous) => [
+            ...previous,
+            { role: item.role, content: item.content }
+          ]);
+        }
+
+        return item;
+      }),
+    [memory, sessionId, wrapAsync]
   );
 
   const recall = useCallback(
     (query: string, recallOptions: Omit<RecallOptions, "sessionId"> = {}) =>
-      memory.recall(query, { ...recallOptions, sessionId }),
-    [memory, sessionId]
+      wrapAsync(() => memory.recall(query, { ...recallOptions, sessionId })),
+    [memory, sessionId, wrapAsync]
   );
 
-  const forget = useCallback((id: string) => memory.forget(id), [memory]);
+  const forget = useCallback(
+    (id: string) => wrapAsync(() => memory.forget(id)),
+    [memory, wrapAsync]
+  );
 
   const inject = useCallback(
     async (
       currentMessages: MemoryMessage[],
       injectOptions: Omit<RecallOptions, "sessionId"> & { query?: string } = {}
-    ) =>
-      {
-        const queryPart =
-          injectOptions.query !== undefined ? { query: injectOptions.query } : {};
-        return memory.inject(currentMessages, {
+    ) => {
+      const queryPart =
+        injectOptions.query !== undefined ? { query: injectOptions.query } : {};
+      return wrapAsync(() =>
+        memory.inject(currentMessages, {
           ...injectOptions,
           ...queryPart,
           sessionId
-        });
-      },
-    [memory, sessionId]
+        })
+      );
+    },
+    [memory, sessionId, wrapAsync]
+  );
+
+  const summarise = useCallback(
+    (summariseOptions: Omit<SummariseOptions, "sessionId"> = {}) =>
+      wrapAsync(() => memory.summarise({ ...summariseOptions, sessionId })),
+    [memory, sessionId, wrapAsync]
+  );
+
+  const clearSession = useCallback(
+    () =>
+      wrapAsync(async () => {
+        await memory.clear(sessionId);
+        setMessages([]);
+      }),
+    [memory, sessionId, wrapAsync]
+  );
+
+  const stats = useCallback(
+    () => wrapAsync(() => memory.stats(sessionId)),
+    [memory, sessionId, wrapAsync]
   );
 
   return {
     messages,
     setMessages,
+    isLoading,
+    error,
     remember,
     recall,
     forget,
     inject,
+    summarise,
+    clearSession,
+    stats,
     memory
   };
 }

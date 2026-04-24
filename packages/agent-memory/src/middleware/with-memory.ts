@@ -8,7 +8,7 @@ import type { MemoryMessage } from "../types/memory";
 
 function extractOutputText(output: unknown): string | null {
   if (typeof output === "string") {
-    return output;
+    return output.trim() || null;
   }
 
   if (
@@ -17,7 +17,8 @@ function extractOutputText(output: unknown): string | null {
     "content" in output &&
     typeof (output as { content?: unknown }).content === "string"
   ) {
-    return (output as { content: string }).content;
+    const content = (output as { content: string }).content.trim();
+    return content || null;
   }
 
   return null;
@@ -54,7 +55,8 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
         ? { importance: runOptions.importance }
         : {};
 
-    if (options.autoStoreInput !== false && userMessage) {
+    // Guard: only store if content is non-empty
+    if (options.autoStoreInput !== false && userMessage?.content?.trim()) {
       await memory.remember({
         role: "user",
         content: userMessage.content,
@@ -82,7 +84,8 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
       }
     }
 
-    if (options.autoSummarise !== false) {
+    // autoSummarise defaults to FALSE — only run if explicitly enabled
+    if (options.autoSummarise === true) {
       await memory.summarise({ sessionId });
     }
 

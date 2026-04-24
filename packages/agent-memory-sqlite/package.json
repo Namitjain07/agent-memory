@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-sqlite",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "SQLite adapter for agent-memory",
   "repository": {
     "type": "git",
@@ -38,7 +38,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --clean"
   },
   "peerDependencies": {
-    "@namitjain.india/agent-memory": "^0.1.0",
+    "@namitjain.india/agent-memory": "^0.2.0",
     "better-sqlite3": "^11.0.0",
     "sqlite-vss": "^0.1.2"
   },

@@ -170,6 +170,13 @@ export class SQLiteAdapter implements MemoryAdapter {
     return rows.map((row) => this.fromRow(row));
   }
 
+  /**
+   * Delete all memory items for a given session.
+   */
+  async clear(sessionId: string): Promise<void> {
+    this.db.prepare(`DELETE FROM memory_items WHERE session_id = ?`).run(sessionId);
+  }
+
   close(): void {
     this.db.close?.();
   }
@@ -201,6 +208,7 @@ export class SQLiteAdapter implements MemoryAdapter {
       );
       CREATE INDEX IF NOT EXISTS idx_memory_items_session ON memory_items(session_id, timestamp);
       CREATE INDEX IF NOT EXISTS idx_memory_items_kind ON memory_items(kind);
+      CREATE INDEX IF NOT EXISTS idx_memory_items_embedding ON memory_items(session_id) WHERE embedding IS NOT NULL;
     `);
   }
 
@@ -277,6 +285,9 @@ export class SQLiteAdapter implements MemoryAdapter {
     };
   }
 }
+
+// ─── Local Math Helpers ────────────────────────────────────────────────────────
+// Kept local to avoid bundler issues with the core package's Node-compatible math.
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length === 0 || b.length === 0 || a.length !== b.length) {

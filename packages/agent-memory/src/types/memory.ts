@@ -39,3 +39,9 @@ export interface MemoryMessage {
   content: string;
   name?: string;
 }
+
+export interface MemoryStats {
+  total: number;
+  byKind: Record<MemoryKind, number>;
+  sessionIds: string[];
+}

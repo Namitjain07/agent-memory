@@ -1,6 +1,11 @@
 export { InMemoryAdapter } from "./adapters/in-memory";
 export { AgentMemory } from "./core/agent-memory";
 export { withMemory } from "./middleware/with-memory";
+export {
+  createBatchEmbedFn,
+  createOpenAIEmbedFn,
+  createOpenAIBatchEmbedFn
+} from "./utils/embed-helpers";
 
 export type {
   MemoryAdapter,
@@ -38,5 +43,6 @@ export type {
   MemoryKind,
   MemoryMessage,
   MemoryRole,
+  MemoryStats,
   MemorySummary
 } from "./types/memory";

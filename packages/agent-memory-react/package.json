@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-react",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "React hook utilities for agent-memory",
   "repository": {
     "type": "git",
@@ -38,7 +38,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --clean --external react"
   },
   "peerDependencies": {
-    "@namitjain.india/agent-memory": "^0.1.0",
+    "@namitjain.india/agent-memory": "^0.2.0",
     "react": "^18.0.0 || ^19.0.0"
   },
   "publishConfig": {

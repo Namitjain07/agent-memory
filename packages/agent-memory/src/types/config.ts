@@ -10,6 +10,7 @@ import type {
   MemoryKind,
   MemoryMessage,
   MemoryRole,
+  MemoryStats,
   MemorySummary
 } from "./memory";
 
@@ -87,6 +88,8 @@ export interface RecallOptions {
   topK?: number;
   kinds?: MemoryKind[];
   minScore?: number;
+  /** Optional predicate to filter candidates after scoring. */
+  filter?: (item: MemoryItem) => boolean;
 }
 
 export interface RecallResult {
@@ -102,6 +105,8 @@ export interface InjectOptions extends RecallOptions {
   format?: (results: RecallResult[]) => string;
   role?: "system";
   name?: string;
+  /** Max characters per memory content snippet (default: 220). */
+  maxContentLength?: number;
 }
 
 export interface SummariseOptions {
@@ -136,17 +141,25 @@ export interface WithMemoryOptions extends AgentMemoryOptions {
   topK?: number;
   autoStoreInput?: boolean;
   autoStoreOutput?: boolean;
+  /**
+   * Auto-summarise after each turn. Defaults to `false`.
+   * Set to `true` only if you have configured a `summariseFn`, otherwise
+   * the default bullet-list summary is stored which is rarely useful.
+   */
   autoSummarise?: boolean;
 }
 
-export interface AdapterContract<
-  TAdd = MemoryItem,
-  TSearchOptions = MemorySearchOptions,
-  TUpdate = MemoryUpdate
-> {
-  add(entry: TAdd): Promise<void>;
-  search(queryVector: number[], options: TSearchOptions): Promise<unknown>;
-  delete(id: string): Promise<void>;
-  update(id: string, data: TUpdate): Promise<void>;
-  getBySession(sessionId: string): Promise<MemoryItem[]>;
-}
+// Re-export for adapter consumers
+export type {
+  MemoryAdapter,
+  MemorySearchOptions,
+  MemoryUpdate,
+  MemoryEntry,
+  MemoryFact,
+  MemoryItem,
+  MemoryKind,
+  MemoryMessage,
+  MemoryRole,
+  MemoryStats,
+  MemorySummary
+};

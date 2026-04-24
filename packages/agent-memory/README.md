@@ -1,14 +1,18 @@
 # @namitjain.india/agent-memory
 
-[![npm version](https://img.shields.io/npm/v/@namitjain.india/agent-memory)](https://www.npmjs.com/package/@namitjain.india/agent-memory)
+[![npm version](https://img.shields.io/npm/v/@namitjain.india/agent-memory?color=blueviolet)](https://www.npmjs.com/package/@namitjain.india/agent-memory)
+[![npm downloads](https://img.shields.io/npm/dm/@namitjain.india/agent-memory?color=blue)](https://www.npmjs.com/package/@namitjain.india/agent-memory)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/Namitjain07/agent-memory?style=social)](https://github.com/Namitjain07/agent-memory/stargazers)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 
-Production-grade memory infrastructure for AI agents, built with TypeScript and designed for real-world scale.
+Production-grade memory infrastructure for AI agents, built with TypeScript.
 
-> **Note**: This is part of the agent-memory monorepo. For general usage, this is the package you need. See also: [SQLite adapter](https://www.npmjs.com/package/@namitjain.india/agent-memory-sqlite) | [Postgres adapter](https://www.npmjs.com/package/@namitjain.india/agent-memory-postgres) | [React hooks](https://www.npmjs.com/package/@namitjain.india/agent-memory-react)
+> Part of the agent-memory monorepo.
+> See also: [SQLite adapter](https://www.npmjs.com/package/@namitjain.india/agent-memory-sqlite) | [Postgres adapter](https://www.npmjs.com/package/@namitjain.india/agent-memory-postgres) | [React hooks](https://www.npmjs.com/package/@namitjain.india/agent-memory-react)
 
-[GitHub](https://github.com/Namitjain07/agent-memory) | [Report Bug](https://github.com/Namitjain07/agent-memory/issues) | [Request Feature](https://github.com/Namitjain07/agent-memory/issues)
+[GitHub](https://github.com/Namitjain07/agent-memory) · [Report Bug](https://github.com/Namitjain07/agent-memory/issues)
+
+---
 
 ## Installation
 
@@ -16,56 +20,88 @@ Production-grade memory infrastructure for AI agents, built with TypeScript and 
 npm install @namitjain.india/agent-memory
 ```
 
+---
+
+## How It Works
+
+```
+remember(entry/fact)
+      │
+      ▼
+  embed content ──► store in adapter (InMemory / SQLite / Postgres)
+      
+recall(query)
+      │
+      ├── embed query
+      ├── vector search in adapter  ──► candidates
+      └── hybrid score each candidate:
+            score = 0.6 × similarity
+                  + 0.3 × recency          (exponential decay)
+                  + 0.1 × importance
+          ──► top-K results
+
+inject(messages)
+      │
+      └── recall(last user message)
+          ──► insert { role:"system", name:"memory" } block
+              before first non-system message
+```
+
+---
+
 ## Features
 
 - **3-Layer Memory Model**
-  - **Episodic**: immutable raw turns (ground truth)
-  - **Semantic**: extracted facts (key/value + embeddings)
-  - **Summary**: compressed long-term context
+  - **Episodic** (`entry`) — raw conversation turns, auto-embedded
+  - **Semantic** (`fact`) — key-value facts with embeddings
+  - **Summary** (`summary`) — compressed long-term context
+- **Hybrid Retrieval** — `score = 0.6·sim + 0.3·recency + 0.1·importance`
+- **Graceful Degradation** — `recall()` works without embeddings (recency+importance only)
+- **Provider-Agnostic** — bring your own `embedFn` (OpenAI, NVIDIA, Cohere, etc.)
+- **Built-in Helpers** — `createOpenAIEmbedFn`, `createOpenAIBatchEmbedFn`, `createBatchEmbedFn`
+- **Filter Callbacks** — `filter: (item) => boolean` in recall options
+- **Session Management** — `clear()`, `stats()`, `update()`, `forget()`
+- **Auto-Summarization** — compress old turns into summaries
+- **TypeScript-First** — full types, ESM + CJS builds
 
-- **Hybrid Retrieval Scoring**
-  ```
-  score = w1*similarity + w2*recency + w3*importance
-  ```
-  Defaults: `0.6`, `0.3`, `0.1`
-
-- **Provider-Agnostic Embeddings**
-  - Bring your own `embedFn` / `embedBatchFn`
-
-- **Summarization Controls**
-  - Trigger by token budget and/or turn count
-
-- **Adapter Abstraction**
-  - Built-in in-memory adapter
-  - Optional SQLite and Postgres adapters for persistence
-
-- **TypeScript-First + Dual Output**
-  - ESM + CJS builds
+---
 
 ## Quick Start
 
 ### Middleware API (Simplest)
 
 ```typescript
-import { withMemory } from "@namitjain.india/agent-memory";
+import OpenAI from "openai";
+import { withMemory, createOpenAIEmbedFn } from "@namitjain.india/agent-memory";
 
-const embedFn = async (text: string) => [text.length / 1000, Number(text.includes("typescript"))];
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const embedFn = createOpenAIEmbedFn(client, "text-embedding-3-small");
 
 const runAgent = withMemory(
   async (messages) => {
-    // Call your LLM provider
-    return "Assistant response";
+    const res = await client.chat.completions.create({ model: "gpt-4o-mini", messages });
+    return res.choices[0]?.message?.content ?? "";
   },
-  {
-    embedding: { embedFn },
-    sessionId: "default-session"
-  }
+  { embedding: { embedFn }, sessionId: "user-123" }
 );
 
-const output = await runAgent([
-  { role: "system", content: "You are a helpful assistant." },
-  { role: "user", content: "I prefer TypeScript." }
-]);
+await runAgent([{ role: "user", content: "My name is Alex and I love TypeScript." }]);
+const reply = await runAgent([{ role: "user", content: "What's my name?" }]);
+// → "Your name is Alex."
+```
+
+### Works with any OpenAI-compatible API (NVIDIA, Azure, etc.)
+
+```typescript
+import OpenAI from "openai";
+import { createOpenAIEmbedFn } from "@namitjain.india/agent-memory";
+
+const client = new OpenAI({
+  baseURL: "https://integrate.api.nvidia.com/v1",
+  apiKey: process.env.NVIDIA_API_KEY
+});
+
+const embedFn = createOpenAIEmbedFn(client, "nvidia/nv-embedqa-e5-v5");
 ```
 
 ### Class API (Full Control)
@@ -74,32 +110,17 @@ const output = await runAgent([
 import { AgentMemory } from "@namitjain.india/agent-memory";
 
 const memory = new AgentMemory({
-  embedding: {
-    embedFn: async (text) => [text.length / 500]
-  },
+  embedding: { embedFn },
   retrieval: {
-    topK: 6,
-    recencyLambda: 0.04,
-    weights: {
-      similarity: 0.6,
-      recency: 0.3,
-      importance: 0.1
-    }
+    topK: 5,
+    recencyLambda: 0.03,
+    weights: { similarity: 0.6, recency: 0.3, importance: 0.1 }
   },
   summarisation: {
     maxTurns: 30,
     tokenBudget: 4000,
     keepRecentTurns: 10
   }
-});
-
-// Store a conversation entry
-await memory.remember({
-  kind: "entry",
-  role: "user",
-  content: "I prefer TypeScript over JavaScript",
-  sessionId: "session-1",
-  importance: 0.8
 });
 
 // Store a fact
@@ -111,291 +132,208 @@ await memory.remember({
   importance: 1
 });
 
-// Recall memories
+// Store a conversation entry (auto-embedded)
+await memory.remember({
+  role: "user",
+  content: "I've been using TypeScript for 3 years",
+  sessionId: "session-1"
+});
+
+// Recall with optional filter
 const recalled = await memory.recall("What language does the user prefer?", {
   sessionId: "session-1",
-  topK: 3
+  topK: 3,
+  filter: (item) => item.kind === "fact"  // optional predicate
 });
+
+// Session stats
+const s = await memory.stats("session-1");
+// → { total: 2, byKind: { entry: 1, fact: 1, summary: 0 }, sessionIds: ["session-1"] }
+
+// Clear a session
+await memory.clear("session-1");
 ```
 
-### Context Injection
-
-Memory is automatically injected as a named system block:
-
-```typescript
-[
-  { role: "system", content: "You are a helpful assistant." },
-  { role: "system", name: "memory", content: "...retrieved memories..." },
-  { role: "user", content: "What do I prefer?" }
-]
-```
+---
 
 ## API Reference
 
-### AgentMemory
+### `new AgentMemory(options?)`
 
-```typescript
-const memory = new AgentMemory(options?: AgentMemoryOptions)
-```
-
-#### Options
-
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `adapter` | `MemoryAdapter` | `InMemoryAdapter` | Storage adapter |
-| `embedding.embedFn` | `(text: string) => Promise<number[]>` | - | Single text embedding function |
-| `embedding.embedBatchFn` | `(texts: string[]) => Promise<number[][]>` | - | Batch embedding function |
-| `retrieval.topK` | `number` | `5` | Number of memories to retrieve |
-| `retrieval.candidateMultiplier` | `number` | `4` | Retrieval candidate pool multiplier |
-| `retrieval.recencyLambda` | `number` | `0.03` | Recency decay factor |
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `adapter` | `MemoryAdapter` | `InMemoryAdapter` | Storage backend |
+| `embedding.embedFn` | `(text) => Promise<number[]>` | — | Single-text embed function |
+| `embedding.embedBatchFn` | `(texts) => Promise<number[][]>` | — | Batch embed function |
+| `retrieval.topK` | `number` | `5` | Results to return |
+| `retrieval.candidateMultiplier` | `number` | `4` | Candidate pool multiplier |
+| `retrieval.recencyLambda` | `number` | `0.03` | Recency decay rate (per hour) |
 | `retrieval.weights.similarity` | `number` | `0.6` | Similarity weight |
 | `retrieval.weights.recency` | `number` | `0.3` | Recency weight |
 | `retrieval.weights.importance` | `number` | `0.1` | Importance weight |
-| `summarisation.maxTurns` | `number` | `24` | Max turns before summarisation |
-| `summarisation.tokenBudget` | `number` | `3000` | Token budget before summarisation |
-| `summarisation.keepRecentTurns` | `number` | `8` | Recent turns to preserve |
-| `summarisation.summariseFn` | `SummariseFn` | - | Custom summarisation function |
-| `defaultSessionId` | `string` | `"default"` | Default session ID |
+| `summarisation.maxTurns` | `number` | `24` | Turns before summarisation |
+| `summarisation.tokenBudget` | `number` | `3000` | Tokens before summarisation |
+| `summarisation.keepRecentTurns` | `number` | `8` | Turns to preserve |
+| `summarisation.summariseFn` | `SummariseFn` | — | Custom LLM summarisation |
+| `defaultSessionId` | `string` | `"default"` | Default session |
 
-#### Methods
+### Methods
 
-##### `remember(input)`
-
-Store a memory entry or fact.
+#### `remember(input)`
+Store an entry or fact. Entries are automatically embedded.
 
 ```typescript
-// Entry (conversation turn)
-await memory.remember({
-  kind: "entry",
-  role: "user" | "assistant" | "system" | "tool",
-  content: "message content",
-  sessionId?: "session-1",
-  importance?: 0.5, // 0-1 scale
-  metadata?: { /* custom data */ }
-});
+// Conversation entry
+await memory.remember({ role: "user", content: "...", sessionId?: "...", importance?: 0.8 });
 
-// Fact (key-value pair)
-await memory.remember({
-  kind: "fact",
-  key: "user_preference",
-  value: "TypeScript",
-  sessionId?: "session-1",
-  importance?: 0.8
-});
+// Fact
+await memory.remember({ kind: "fact", key: "language", value: "TypeScript", sessionId?: "..." });
 ```
 
-##### `recall(query, options?)`
-
-Retrieve relevant memories using hybrid scoring.
+#### `recall(query, options?)`
+Retrieve memories using hybrid scoring.
 
 ```typescript
-const results = await memory.recall("What does the user prefer?", {
+const results = await memory.recall("query text", {
   sessionId?: "session-1",
   topK?: 5,
-  kinds?: ["entry", "fact", "summary"], // filter by kind
-  minScore?: 0.3 // minimum score threshold
+  kinds?: ["fact", "entry", "summary"],
+  minScore?: 0.3,
+  filter?: (item) => item.importance > 0.5
 });
-
-// Results include score breakdown:
-results.forEach(r => {
-  console.log(r.item.content);
-  console.log(`Score: ${r.score} (sim: ${r.similarity}, rec: ${r.recency}, imp: ${r.importance})`);
-});
+// results[i].score, .similarity, .recency, .importance
 ```
 
-##### `inject(messages, options?)`
-
-Inject retrieved memories into a message array.
-
-```typescript
-const enhancedMessages = await memory.inject(
-  [{ role: "user", content: "Hello" }],
-  {
-    sessionId?: "session-1",
-    topK?: 3,
-    query?: "custom query", // defaults to last user message
-    role?: "system", // memory message role
-    name?: "memory", // memory message name
-    format?: (results) => "..." // custom format
-  }
-);
-```
-
-##### `summarise(options?)`
-
-Summarize older entries to save context.
+#### `inject(messages, options?)`
+Inject recalled memories as a system block into a message array.
 
 ```typescript
-await memory.summarise({
+const enhanced = await memory.inject(messages, {
   sessionId?: "session-1",
-  force?: false,
-  maxTurns?: 24,
-  tokenBudget?: 3000,
-  keepRecentTurns?: 8
+  topK?: 3,
+  query?: "override query",
+  format?: (results) => "...",
+  maxContentLength?: 300  // truncate snippets at N chars (default: 220)
 });
 ```
 
-##### `forget(id)`
-
-Delete a specific memory by ID.
-
-```typescript
-await memory.forget("memory-entry-id");
-```
-
-##### `getBySession(sessionId?)`
-
-Get all memories for a session.
+#### `summarise(options?)`
+Compress old entries into a summary.
 
 ```typescript
-const allMemories = await memory.getBySession("session-1");
+await memory.summarise({ sessionId?: "session-1", force?: true });
 ```
 
-### withMemory
-
-Middleware wrapper for easy integration.
+#### `forget(id)` / `clear(sessionId?)` / `update(id, data)`
 
 ```typescript
-const runAgent = withMemory(agentFn, options);
-const output = await runAgent(messages, runOptions?, ...extra);
+await memory.forget("item-id");           // delete one item
+await memory.clear("session-1");          // delete entire session
+await memory.update("item-id", { importance: 0.9 });
 ```
+
+#### `stats(sessionId?)`
+
+```typescript
+const s = await memory.stats("session-1");
+// { total: 5, byKind: { entry: 3, fact: 2, summary: 0 }, sessionIds: ["session-1"] }
+```
+
+---
+
+### `withMemory(agentFn, options)`
+
+Wrap any agent function with automatic memory.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `sessionId` | `string` | `"default"` | Session ID |
-| `topK` | `number` | - | Memories to retrieve |
-| `autoStoreInput` | `boolean` | `true` | Auto-store user messages |
-| `autoStoreOutput` | `boolean` | `true` | Auto-store assistant responses |
-| `autoSummarise` | `boolean` | `true` | Auto-summarise when needed |
+| `topK` | `number` | — | Memories to inject |
+| `autoStoreInput` | `boolean` | `true` | Store user messages |
+| `autoStoreOutput` | `boolean` | `true` | Store assistant responses |
+| `autoSummarise` | `boolean` | `false` | Auto-summarise after each turn |
 
-### Memory Types
+---
+
+### Embed Helpers
 
 ```typescript
-// Entry (conversation turn)
-interface MemoryEntry {
-  id: string;
-  kind: "entry";
-  sessionId: string;
-  role: "system" | "user" | "assistant" | "tool";
-  content: string;
-  timestamp: number;
-  importance: number;
-  embedding?: number[];
-  metadata?: Record<string, unknown>;
-}
+import {
+  createOpenAIEmbedFn,
+  createOpenAIBatchEmbedFn,
+  createBatchEmbedFn
+} from "@namitjain.india/agent-memory";
 
-// Fact (key-value)
-interface MemoryFact {
-  id: string;
-  kind: "fact";
-  sessionId: string;
-  key: string;
-  value: string;
-  content: string;
-  timestamp: number;
-  importance: number;
-  embedding?: number[];
-  metadata?: Record<string, unknown>;
-}
+// OpenAI / Azure / NVIDIA NIM single embed
+const embedFn = createOpenAIEmbedFn(client, "text-embedding-3-small");
 
-// Summary
-interface MemorySummary {
-  id: string;
-  kind: "summary";
-  sessionId: string;
-  content: string;
-  timestamp: number;
-  importance: number;
-  fromTimestamp: number;
-  toTimestamp: number;
-  replacedEntryIds: string[];
-}
+// OpenAI batch embed (one API call for all texts)
+const batchFn = createOpenAIBatchEmbedFn(client, "text-embedding-3-small");
+
+// Wrap any single embed fn into a batched one (parallel chunks)
+const batched = createBatchEmbedFn(myEmbedFn, /* batchSize */ 20);
 ```
+
+---
 
 ## Storage Adapters
 
 ### In-Memory (Built-in)
 
-Default adapter, data is lost on process restart.
-
 ```typescript
 import { AgentMemory, InMemoryAdapter } from "@namitjain.india/agent-memory";
-
-const memory = new AgentMemory({
-  adapter: new InMemoryAdapter()
-});
+const memory = new AgentMemory({ adapter: new InMemoryAdapter() });
 ```
 
-### SQLite (Persistence)
+### SQLite
 
-For serverless and local development.
+```bash
+npm i @namitjain.india/agent-memory-sqlite better-sqlite3
+```
 
 ```typescript
-import { AgentMemory } from "@namitjain.india/agent-memory";
 import { SQLiteAdapter } from "@namitjain.india/agent-memory-sqlite";
-
-const memory = new AgentMemory({
-  adapter: new SQLiteAdapter({ dbPath: "./memory.db" }),
-  embedding: { embedFn }
-});
+const memory = new AgentMemory({ adapter: new SQLiteAdapter({ dbPath: "./memory.db" }) });
 ```
 
-See [@namitjain.india/agent-memory-sqlite](https://www.npmjs.com/package/@namitjain.india/agent-memory-sqlite) for full documentation.
+### Postgres (pgvector)
 
-### Postgres (Production Scale)
-
-For production with pgvector support.
+```bash
+npm i @namitjain.india/agent-memory-postgres pg
+```
 
 ```typescript
-import { AgentMemory } from "@namitjain.india/agent-memory";
 import { PostgresAdapter } from "@namitjain.india/agent-memory-postgres";
-
 const memory = new AgentMemory({
-  adapter: new PostgresAdapter({
-    connectionString: "postgresql://..."
-  }),
-  embedding: { embedFn }
+  adapter: new PostgresAdapter({ connectionString: process.env.DATABASE_URL })
 });
 ```
 
-See [@namitjain.india/agent-memory-postgres](https://www.npmjs.com/package/@namitjain.india/agent-memory-postgres) for full documentation.
+---
 
-## Contributing & Collaboration
+## Troubleshooting
 
-We welcome contributions, feedback, and feature requests!
+**`recall()` returns empty results**
+→ Make sure you configured an `embedFn` / `embedBatchFn`. Without one, scoring is recency+importance only — results will still return but may not be semantically relevant.
 
-### Ways to Contribute
+**`remember()` throws "Cannot store entry with empty content"**
+→ Guard against empty strings before calling `remember`.
 
-- **Bug Reports**: Found a bug? [Open an issue](https://github.com/Namitjain07/agent-memory/issues)
-- **Feature Requests**: Have an idea? [Share it](https://github.com/Namitjain07/agent-memory/issues)
-- **Pull Requests**: Want to contribute code? [Submit a PR](https://github.com/Namitjain07/agent-memory/pulls)
-- **Documentation**: Help improve the docs
+**Postgres: `vector` type not found**
+→ Run `CREATE EXTENSION vector;` or set `autoCreateExtension: true` (default).
 
-### Development
+---
+
+## Contributing
 
 ```bash
 git clone https://github.com/Namitjain07/agent-memory.git
-cd agent-memory
-npm install
-npm test
-npm run build
+cd agent-memory && npm install
+npm test && npm run build
 ```
 
-### Roadmap
-
-We plan to add:
-- MongoDB adapter
-- Redis adapter with vector search
-- More embedding provider integrations (OpenAI, Anthropic, Cohere)
-- Conversation chain persistence
-- Multi-agent memory sharing
-
-### Star the Project
-
-If this project helps you, please consider [starring it on GitHub](https://github.com/Namitjain07/agent-memory)!
-
-Your support helps the project grow and reach more developers.
+See [CONTRIBUTING.md](https://github.com/Namitjain07/agent-memory/blob/main/CONTRIBUTING.md).
 
 ## License
 
-MIT - see [LICENSE](https://github.com/Namitjain07/agent-memory/blob/main/LICENSE)
+MIT © [Namit Jain](https://github.com/Namitjain07)
