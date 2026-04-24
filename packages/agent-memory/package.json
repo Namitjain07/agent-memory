@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory",
-  "version": "0.3.0",
+  "version": "0.4.0-beta.1",
   "description": "Production-grade memory engine for AI agents",
   "repository": {
     "type": "git",
@@ -22,7 +22,20 @@
     "conversation-memory",
     "ai-agent",
     "openai",
-    "claude"
+    "claude",
+    "rag",
+    "retrieval-augmented-generation",
+    "knowledge-graph",
+    "graph-memory",
+    "pagerank",
+    "spreading-activation",
+    "long-term-memory",
+    "persistent-memory",
+    "chatbot-memory",
+    "autonomous-agents",
+    "memory-graph",
+    "graphrag",
+    "hipporag"
   ],
   "license": "MIT",
   "type": "module",
@@ -34,13 +47,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./beta": {
+      "types": "./dist/beta.d.ts",
+      "import": "./dist/beta.js",
+      "require": "./dist/beta.cjs"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build": "tsup src/index.ts src/beta.ts --format cjs,esm --dts --clean",
     "test": "vitest run"
   },
   "publishConfig": {
