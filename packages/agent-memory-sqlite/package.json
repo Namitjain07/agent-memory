@@ -1,0 +1,38 @@
+{
+  "name": "@namitjain07/agent-memory-sqlite",
+  "version": "0.1.0",
+  "description": "SQLite adapter for agent-memory",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean"
+  },
+  "peerDependencies": {
+    "@namitjain07/agent-memory": "^0.1.0",
+    "better-sqlite3": "^11.0.0",
+    "sqlite-vss": "^0.1.2"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "sqlite-vss": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
