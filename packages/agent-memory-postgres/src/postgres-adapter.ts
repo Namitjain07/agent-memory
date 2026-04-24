@@ -5,7 +5,7 @@ import type {
   MemorySearchCandidate,
   MemorySearchOptions,
   MemoryUpdate
-} from "@namitjain07/agent-memory";
+} from "@namitjain.india/agent-memory";
 
 type QueryResultRow = Record<string, unknown>;
 

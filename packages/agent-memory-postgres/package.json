@@ -1,5 +1,5 @@
 {
-  "name": "@namitjain07/agent-memory-postgres",
+  "name": "@namitjain.india/agent-memory-postgres",
   "version": "0.1.0",
   "description": "Postgres adapter for agent-memory using pgvector",
   "type": "module",
@@ -20,7 +20,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --clean"
   },
   "peerDependencies": {
-    "@namitjain07/agent-memory": "^0.1.0",
+    "@namitjain.india/agent-memory": "^0.1.0",
     "pg": "^8.0.0",
     "pgvector": "^0.2.0"
   },

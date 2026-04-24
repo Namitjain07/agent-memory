@@ -7,7 +7,7 @@ import type {
   MemorySearchCandidate,
   MemorySearchOptions,
   MemoryUpdate
-} from "@namitjain07/agent-memory";
+} from "@namitjain.india/agent-memory";
 
 type StatementLike = {
   run: (...params: unknown[]) => unknown;

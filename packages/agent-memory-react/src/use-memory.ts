@@ -9,7 +9,7 @@ import {
   type RecallOptions,
   type RecallResult,
   type RememberInput
-} from "@namitjain07/agent-memory";
+} from "@namitjain.india/agent-memory";
 
 export interface UseMemoryOptions extends Omit<AgentMemoryOptions, "defaultSessionId"> {
   memory?: AgentMemory;

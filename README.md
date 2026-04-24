@@ -38,25 +38,25 @@ packages/
 
 Published package names:
 
-- `@namitjain07/agent-memory`
-- `@namitjain07/agent-memory-sqlite`
-- `@namitjain07/agent-memory-postgres`
-- `@namitjain07/agent-memory-react`
+- `@namitjain.india/agent-memory`
+- `@namitjain.india/agent-memory-sqlite`
+- `@namitjain.india/agent-memory-postgres`
+- `@namitjain.india/agent-memory-react`
 
 ---
 
 ## Installation
 
 ```bash
-npm i @namitjain07/agent-memory
+npm i @namitjain.india/agent-memory
 ```
 
 Optional adapters:
 
 ```bash
-npm i @namitjain07/agent-memory-sqlite better-sqlite3 sqlite-vss
-npm i @namitjain07/agent-memory-postgres pg pgvector
-npm i @namitjain07/agent-memory-react react
+npm i @namitjain.india/agent-memory-sqlite better-sqlite3 sqlite-vss
+npm i @namitjain.india/agent-memory-postgres pg pgvector
+npm i @namitjain.india/agent-memory-react react
 ```
 
 ---
@@ -64,7 +64,7 @@ npm i @namitjain07/agent-memory-react react
 ## Quick Start (Middleware API)
 
 ```ts
-import { withMemory } from "@namitjain07/agent-memory";
+import { withMemory } from "@namitjain.india/agent-memory";
 
 const embedFn = async (text: string) => [text.length / 1000, Number(text.includes("typescript"))];
 
@@ -90,7 +90,7 @@ const output = await runAgent([
 ## Class API (Full Control)
 
 ```ts
-import { AgentMemory } from "@namitjain07/agent-memory";
+import { AgentMemory } from "@namitjain.india/agent-memory";
 
 const memory = new AgentMemory({
   embedding: {
@@ -131,7 +131,7 @@ const recalled = await memory.recall("What language does the user prefer?", {
 ## React Hook API
 
 ```tsx
-import { useMemory } from "@namitjain07/agent-memory-react";
+import { useMemory } from "@namitjain.india/agent-memory-react";
 
 function Chat() {
   const { messages, remember, recall } = useMemory("session-1");
