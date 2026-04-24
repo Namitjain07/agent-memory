@@ -1,0 +1,74 @@
+name: Publish to npm
+
+# Triggers on any tag push matching v* (e.g. v0.3.0, v1.0.0)
+# Also works when you manually create a GitHub Release.
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+
+# OIDC: grants this workflow permission to request a short-lived
+# npm publish token without storing any long-lived secret.
+permissions:
+  contents: read
+  id-token: write   # required for npm OIDC Trusted Publisher
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+  publish:
+    name: Publish packages
+    runs-on: ubuntu-latest
+    needs: test
+    # Optional: tie to a GitHub Actions environment for extra approval controls.
+    # Create an environment called "npm-publish" in Settings → Environments.
+    environment: npm-publish
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npm run build --workspaces --if-present
+
+      # Publish core package first (adapters depend on it for types)
+      - name: Publish @namitjain.india/agent-memory
+        run: npm publish --access public --provenance
+        working-directory: packages/agent-memory
+
+      - name: Publish @namitjain.india/agent-memory-sqlite
+        run: npm publish --access public --provenance
+        working-directory: packages/agent-memory-sqlite
+
+      - name: Publish @namitjain.india/agent-memory-postgres
+        run: npm publish --access public --provenance
+        working-directory: packages/agent-memory-postgres
+
+      - name: Publish @namitjain.india/agent-memory-react
+        run: npm publish --access public --provenance
+        working-directory: packages/agent-memory-react
