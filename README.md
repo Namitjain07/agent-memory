@@ -178,6 +178,16 @@ npm run build
 
 ---
 
+## Community
+
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Contributing Guide](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Issue Templates](./.github/ISSUE_TEMPLATE/)
+- [Pull Request Template](./.github/pull_request_template.md)
+
+---
+
 ## License
 
 MIT
