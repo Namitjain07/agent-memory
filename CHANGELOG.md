@@ -7,6 +7,40 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0] — 2026-04-25
+
+### 🚀 New Features — Provider System
+
+Added a built-in provider system so you can pick an API provider by name
+instead of wiring up `fetch` calls yourself. Zero new npm dependencies —
+all providers use native `fetch`.
+
+**Supported providers:**
+
+| Provider | Embed | Summarise | Notes |
+|----------|-------|-----------|-------|
+| `openai` | ✅ | ✅ | `text-embedding-3-small` + `gpt-4o-mini` |
+| `nvidia` | ✅ | ✅ | OpenAI-compatible NIM endpoint |
+| `mistral` | ✅ | ✅ | `mistral-embed` + `mistral-small-latest` |
+| `azure` | ✅ | ✅ | Deployment-based URL + `api-key` header |
+| `ollama` | ✅ | ✅ | Local, no API key needed |
+| `cohere` | ✅ | ✅ | `embed-english-v3.0` + `command-r-plus` |
+| `google` | ✅ | ✅ | `text-embedding-004` + `gemini-1.5-flash` |
+| `anthropic` | ❌ | ✅ | Summarise only (`claude-3-5-haiku`) |
+| `voyage` | ✅ | ❌ | Embeddings only (`voyage-3`) |
+
+**New exports:**
+- `createProvider(name, options)` — type-safe factory with full overloads
+- Named exports: `openaiProvider`, `nvidiaProvider`, `mistralProvider`,
+  `azureOpenAIProvider`, `cohereProvider`, `googleProvider`,
+  `anthropicProvider`, `voyageProvider`, `ollamaProvider`
+- `MemoryProvider` interface
+
+**28 new provider tests** covering request format, URL construction, headers,
+response parsing, and edge cases.
+
+---
+
 ## [0.2.0] — 2026-04-25
 
 ### 🚀 New Features

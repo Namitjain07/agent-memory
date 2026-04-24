@@ -58,20 +58,22 @@ export function useMemory(
   );
   const memory = memoryRef.current;
 
-  const wrapAsync = useCallback(
-    <T>(fn: () => Promise<T>): Promise<T> => {
-      setIsLoading(true);
-      setError(null);
-      return fn()
-        .catch((err: unknown) => {
-          const e = err instanceof Error ? err : new Error(String(err));
-          setError(e);
-          throw e;
-        })
-        .finally(() => setIsLoading(false));
-    },
-    []
-  );
+  const wrapAsyncFn = <T>(fn: () => Promise<T>): Promise<T> => {
+    setIsLoading(true);
+    setError(null);
+    return fn()
+      .catch((err: unknown) => {
+        const e = err instanceof Error ? err : new Error(String(err));
+        setError(e);
+        throw e;
+      })
+      .finally(() => setIsLoading(false));
+  };
+  // Stable ref so callbacks below don't re-create on every render
+  const wrapAsyncRef = useRef(wrapAsyncFn);
+  wrapAsyncRef.current = wrapAsyncFn;
+  const wrapAsync = <T>(fn: () => Promise<T>): Promise<T> =>
+    wrapAsyncRef.current(fn);
 
   const remember = useCallback(
     (input: Omit<RememberInput, "sessionId">): Promise<MemoryItem> =>

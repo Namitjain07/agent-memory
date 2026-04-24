@@ -80,6 +80,41 @@ packages/
 
 ---
 
+## Built-in Providers
+
+Pick any API provider with a single import — no SDK required, zero extra dependencies.
+
+```ts
+import { createProvider } from "@namitjain.india/agent-memory";
+
+const provider = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY });
+
+const memory = new AgentMemory({
+  embedding: provider,                      // embedFn + embedBatchFn auto-wired
+  summarisation: { summariseFn: provider.summarise }
+});
+```
+
+| Provider | Key | Embeddings | Summarise | Default Models |
+|----------|-----|-----------|-----------|----------------|
+| `"openai"` | `apiKey` | ✅ | ✅ | `text-embedding-3-small` + `gpt-4o-mini` |
+| `"nvidia"` | `apiKey` | ✅ | ✅ | `nv-embedqa-e5-v5` + `llama-3.1-8b-instruct` |
+| `"mistral"` | `apiKey` | ✅ | ✅ | `mistral-embed` + `mistral-small-latest` |
+| `"azure"` | `apiKey` + `endpoint` | ✅ | ✅ | deployment-based |
+| `"cohere"` | `apiKey` | ✅ | ✅ | `embed-english-v3.0` + `command-r-plus` |
+| `"google"` | `apiKey` | ✅ | ✅ | `text-embedding-004` + `gemini-1.5-flash` |
+| `"anthropic"` | `apiKey` | ❌ | ✅ | `claude-3-5-haiku-20241022` |
+| `"voyage"` | `apiKey` | ✅ | ❌ | `voyage-3` |
+| `"ollama"` | *(none)* | ✅ | ✅ | `nomic-embed-text` + `llama3.2` |
+
+You can also import providers individually (tree-shaking-friendly):
+
+```ts
+import { nvidiaProvider, cohereProvider } from "@namitjain.india/agent-memory";
+```
+
+---
+
 ## Installation
 
 ```bash

@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Production-grade memory engine for AI agents",
   "repository": {
     "type": "git",
