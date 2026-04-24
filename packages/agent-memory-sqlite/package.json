@@ -1,7 +1,25 @@
 {
   "name": "@namitjain.india/agent-memory-sqlite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SQLite adapter for agent-memory",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "keywords": [
+    "ai",
+    "memory",
+    "agent",
+    "sqlite",
+    "persistence",
+    "local-storage",
+    "vector-search"
+  ],
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

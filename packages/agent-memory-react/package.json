@@ -1,7 +1,25 @@
 {
   "name": "@namitjain.india/agent-memory-react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React hook utilities for agent-memory",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "keywords": [
+    "ai",
+    "memory",
+    "agent",
+    "react",
+    "hook",
+    "llm",
+    "context"
+  ],
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
