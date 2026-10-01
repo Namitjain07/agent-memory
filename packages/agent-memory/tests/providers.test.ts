@@ -39,19 +39,45 @@ function assertProviderShape(provider: MemoryProvider, name: string, hasSummaris
 
 const FAKE_EMBEDDING = [0.1, 0.2, 0.3];
 const FAKE_ENTRIES = [
-  { id: "1", kind: "entry" as const, sessionId: "s", role: "user" as const, content: "Hello", timestamp: 1, importance: 0.5 },
-  { id: "2", kind: "entry" as const, sessionId: "s", role: "assistant" as const, content: "Hi!", timestamp: 2, importance: 0.5 }
+  {
+    id: "1",
+    kind: "entry" as const,
+    sessionId: "s",
+    role: "user" as const,
+    content: "Hello",
+    timestamp: 1,
+    importance: 0.5
+  },
+  {
+    id: "2",
+    kind: "entry" as const,
+    sessionId: "s",
+    role: "assistant" as const,
+    content: "Hi!",
+    timestamp: 2,
+    importance: 0.5
+  }
 ];
 
 // ─── createProvider factory ───────────────────────────────────────────────────
 
 describe("createProvider factory", () => {
   it("routes to the correct provider by name", () => {
-    const names = ["openai", "nvidia", "mistral", "cohere", "google", "anthropic", "voyage", "ollama"] as const;
+    const names = [
+      "openai",
+      "nvidia",
+      "mistral",
+      "cohere",
+      "google",
+      "anthropic",
+      "voyage",
+      "ollama"
+    ] as const;
     for (const name of names) {
-      const opts = name === "ollama" || name === "anthropic" || name === "voyage"
-        ? { apiKey: "key" }
-        : { apiKey: "key" };
+      const opts =
+        name === "ollama" || name === "anthropic" || name === "voyage"
+          ? { apiKey: "key" }
+          : { apiKey: "key" };
       // Just check it doesn't throw and returns the right name
       const p = createProvider(name as "openai", opts as never);
       expect(p.name).toBe(name);
@@ -67,9 +93,12 @@ describe("createProvider factory", () => {
 
 describe("openaiProvider", () => {
   beforeEach(() => {
-    vi.stubGlobal("fetch", makeFetch({
-      data: [{ embedding: FAKE_EMBEDDING }]
-    }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({
+        data: [{ embedding: FAKE_EMBEDDING }]
+      })
+    );
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -85,7 +114,10 @@ describe("openaiProvider", () => {
 
   it("embedBatchFn calls /embeddings with input array", async () => {
     const provider = openaiProvider({ apiKey: "test-key" });
-    vi.stubGlobal("fetch", makeFetch({ data: [{ embedding: FAKE_EMBEDDING }, { embedding: FAKE_EMBEDDING }] }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({ data: [{ embedding: FAKE_EMBEDDING }, { embedding: FAKE_EMBEDDING }] })
+    );
 
     const result = await provider.embedBatchFn(["a", "b"]);
     expect(result).toHaveLength(2);
@@ -120,9 +152,12 @@ describe("openaiProvider", () => {
   });
 
   it("summarise calls /chat/completions", async () => {
-    vi.stubGlobal("fetch", makeFetch({
-      choices: [{ message: { content: "  Summary text  " } }]
-    }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({
+        choices: [{ message: { content: "  Summary text  " } }]
+      })
+    );
     const provider = openaiProvider({ apiKey: "k" });
     const result = await provider.summarise!({ sessionId: "s", entries: FAKE_ENTRIES, tokenCount: 10 });
     expect(result).toBe("Summary text");
@@ -235,9 +270,12 @@ describe("cohereProvider", () => {
   });
 
   it("summarise calls /chat", async () => {
-    vi.stubGlobal("fetch", makeFetch({
-      message: { content: [{ type: "text", text: "  Summary  " }] }
-    }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({
+        message: { content: [{ type: "text", text: "  Summary  " }] }
+      })
+    );
     const provider = cohereProvider({ apiKey: "k" });
     const result = await provider.summarise!({ sessionId: "s", entries: FAKE_ENTRIES, tokenCount: 5 });
     expect(result).toBe("Summary");
@@ -265,9 +303,12 @@ describe("googleProvider", () => {
   });
 
   it("embedBatchFn calls batchEmbedContents", async () => {
-    vi.stubGlobal("fetch", makeFetch({
-      embeddings: [{ values: FAKE_EMBEDDING }, { values: FAKE_EMBEDDING }]
-    }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({
+        embeddings: [{ values: FAKE_EMBEDDING }, { values: FAKE_EMBEDDING }]
+      })
+    );
     const provider = googleProvider({ apiKey: "k" });
     const result = await provider.embedBatchFn(["a", "b"]);
     expect(result).toHaveLength(2);
@@ -282,21 +323,23 @@ describe("googleProvider", () => {
 describe("anthropicProvider", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("has summarise but embedFn returns empty array (no fetch call)", async () => {
+  it("has summarise but embedFn throws a helpful error (no fetch call)", async () => {
     vi.stubGlobal("fetch", vi.fn());
     const provider = anthropicProvider({ apiKey: "k" });
     expect(provider.name).toBe("anthropic");
     expect(provider.summarise).toBeDefined();
 
-    const vec = await provider.embedFn("test");
-    expect(vec).toEqual([]);
+    await expect(provider.embedFn("test")).rejects.toThrow(/does not support embeddings/);
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("summarise calls Anthropic messages API", async () => {
-    vi.stubGlobal("fetch", makeFetch({
-      content: [{ type: "text", text: "  Claude summary  " }]
-    }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({
+        content: [{ type: "text", text: "  Claude summary  " }]
+      })
+    );
     const provider = anthropicProvider({ apiKey: "ant-key" });
     const result = await provider.summarise!({ sessionId: "s", entries: FAKE_ENTRIES, tokenCount: 5 });
     expect(result).toBe("Claude summary");
@@ -352,9 +395,12 @@ describe("ollamaProvider", () => {
   });
 
   it("summarise calls /api/chat", async () => {
-    vi.stubGlobal("fetch", makeFetch({
-      message: { content: "  Ollama summary  " }
-    }));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch({
+        message: { content: "  Ollama summary  " }
+      })
+    );
     const provider = ollamaProvider({ chatModel: "llama3.2" });
     const result = await provider.summarise!({ sessionId: "s", entries: FAKE_ENTRIES, tokenCount: 5 });
     expect(result).toBe("Ollama summary");

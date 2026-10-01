@@ -4,6 +4,8 @@
  */
 import type { SummariseFn } from "../types/config";
 import { buildSummaryPrompt, buildConversationText, fetchJSON, type MemoryProvider } from "./types";
+import type { RequestOptions } from "../utils/http";
+import { DEFAULT_RETRY_POLICY } from "../utils/http";
 
 export interface GoogleProviderOptions {
   apiKey: string;
@@ -12,6 +14,8 @@ export interface GoogleProviderOptions {
   /** Chat model used for summarisation. Defaults to `gemini-1.5-flash`. */
   chatModel?: string;
   baseURL?: string;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
 interface GeminiEmbedResponse {
@@ -40,15 +44,16 @@ export function googleProvider(options: GoogleProviderOptions): MemoryProvider {
   const embeddingModel = options.embeddingModel ?? "text-embedding-004";
   const chatModel = options.chatModel ?? "gemini-1.5-flash";
   const key = options.apiKey;
-  const headers = {};  // auth is via ?key= query param for Google
+  const headers = {}; // auth is via ?key= query param for Google
+  const requestOptions = options.requestOptions;
 
   const embedFn = async (text: string): Promise<number[]> => {
     const url = `${base}/models/${embeddingModel}:embedContent?key=${key}`;
-    const res = await fetchJSON<GeminiEmbedResponse>(
-      url,
-      { content: { parts: [{ text }] } },
-      headers
-    );
+    const res = await fetchJSON<GeminiEmbedResponse>(url, { content: { parts: [{ text }] } }, headers, {
+      ...DEFAULT_RETRY_POLICY,
+      ...(requestOptions ?? {}),
+      context: "google embed"
+    });
     return res.embedding.values;
   };
 
@@ -63,7 +68,12 @@ export function googleProvider(options: GoogleProviderOptions): MemoryProvider {
           content: { parts: [{ text }] }
         }))
       },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "google embed-batch"
+      }
     );
     return res.embeddings.map((e) => e.values);
   };
@@ -76,11 +86,23 @@ export function googleProvider(options: GoogleProviderOptions): MemoryProvider {
         contents: [{ parts: [{ text: buildSummaryPrompt(entries) }] }],
         generationConfig: { maxOutputTokens: 512, temperature: 0.3 }
       },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "google summarise"
+      }
     );
     const text = res.candidates[0]?.content?.parts[0]?.text;
     return text?.trim() ?? buildConversationText(entries);
   };
 
-  return { name: "google", embedFn, embedBatchFn, summarise };
+  const provider: MemoryProvider = {
+    name: "google",
+    embedFn,
+    embedBatchFn,
+    summarise
+  };
+  if (requestOptions) provider.defaultRequestOptions = requestOptions;
+  return provider;
 }

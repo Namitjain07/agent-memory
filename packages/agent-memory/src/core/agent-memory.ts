@@ -1,7 +1,10 @@
 import { InMemoryAdapter } from "../adapters/in-memory";
 import type {
   AgentMemoryOptions,
+  BatchRememberInput,
+  BatchRememberResult,
   EmbedBatchFn,
+  EmbeddingCache,
   EmbedFn,
   InjectOptions,
   RecallOptions,
@@ -21,17 +24,22 @@ import type {
   MemoryItem,
   MemoryMessage,
   MemoryStats,
-  MemorySummary
+  MemorySummary,
+  MemoryTier
 } from "../types/memory";
 import { formatRecallResults } from "../utils/format";
 import { createMemoryId } from "../utils/ids";
 import { clamp, cosineSimilarity, normalizeSimilarity } from "../utils/math";
 import { recencyScore } from "../utils/time";
 import { approximateTokenCount } from "../utils/tokens";
+import { bm25Scores } from "../utils/bm25";
+import { LRU } from "../utils/lru";
+import { ConfigurationError, StorageError } from "../utils/errors";
 
 const DEFAULT_WEIGHTS: RetrievalWeights = {
-  similarity: 0.6,
-  recency: 0.3,
+  similarity: 0.55,
+  keyword: 0.15,
+  recency: 0.2,
   importance: 0.1
 };
 
@@ -39,11 +47,15 @@ export class AgentMemory {
   private readonly adapter: MemoryAdapter;
 
   private readonly defaultSessionId: string;
+  private readonly defaultUserId: string | undefined;
+  private readonly defaultAgentId: string | undefined;
+  private readonly defaultTier: MemoryTier;
 
   private readonly retrieval: {
     topK: number;
     candidateMultiplier: number;
     recencyLambda: number;
+    minScore: number;
     weights: RetrievalWeights;
   };
 
@@ -56,16 +68,21 @@ export class AgentMemory {
   };
 
   private readonly embedFn: EmbedFn | undefined;
-
   private readonly embedBatchFn: EmbedBatchFn | undefined;
+  private readonly embedCache: EmbeddingCache | undefined;
+  private readonly debug: boolean;
 
   constructor(options: AgentMemoryOptions = {}) {
     this.adapter = options.adapter ?? new InMemoryAdapter();
     this.defaultSessionId = options.defaultSessionId ?? "default";
+    this.defaultUserId = options.defaultUserId;
+    this.defaultAgentId = options.defaultAgentId;
+    this.defaultTier = options.defaultTier ?? "session";
     this.retrieval = {
       topK: options.retrieval?.topK ?? 5,
       candidateMultiplier: options.retrieval?.candidateMultiplier ?? 4,
       recencyLambda: options.retrieval?.recencyLambda ?? 0.03,
+      minScore: options.retrieval?.minScore ?? 0,
       weights: {
         ...DEFAULT_WEIGHTS,
         ...(options.retrieval?.weights ?? {})
@@ -80,6 +97,10 @@ export class AgentMemory {
     };
     this.embedFn = options.embedding?.embedFn;
     this.embedBatchFn = options.embedding?.embedBatchFn;
+    this.embedCache =
+      options.embedding?.cache ??
+      (this.embedFn || this.embedBatchFn ? new LRU<string, number[]>(1_000) : undefined);
+    this.debug = options.debug ?? false;
   }
 
   // ─── Public Write API ────────────────────────────────────────────────────────
@@ -91,12 +112,66 @@ export class AgentMemory {
     return this.rememberEntry(input);
   }
 
-  async forget(id: string): Promise<void> {
-    await this.adapter.delete(id);
+  /**
+   * Store many memory items in a single call. Embedding calls are
+   * bounded by `concurrency` to avoid overwhelming the embedding provider.
+   * Errors on individual items are captured in the `errors` array — the
+   * batch never throws because of a single bad item.
+   */
+  async rememberBatch(input: BatchRememberInput): Promise<BatchRememberResult> {
+    const concurrency = Math.max(1, input.concurrency ?? 5);
+    const stored: Array<MemoryEntry | MemoryFact> = [];
+    const errors: Array<{ index: number; error: Error }> = [];
+
+    // Simple rolling window — no need for a full pool
+    let nextIndex = 0;
+    const worker = async (): Promise<void> => {
+      while (nextIndex < input.items.length) {
+        const idx = nextIndex;
+        nextIndex += 1;
+        const item = input.items[idx]!;
+        try {
+          const result = await this.remember(item);
+          stored.push(result);
+        } catch (err) {
+          errors.push({
+            index: idx,
+            error: err instanceof Error ? err : new Error(String(err))
+          });
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, input.items.length) }, worker));
+    return { stored, errors };
   }
 
-  async update(id: string, data: Partial<Pick<MemoryItem, "importance" | "embedding" | "metadata" | "content">>): Promise<void> {
-    await this.adapter.update(id, data);
+  async forget(id: string): Promise<void> {
+    try {
+      await this.adapter.delete(id);
+    } catch (err) {
+      throw new StorageError(
+        `Failed to forget item ${id}: ${err instanceof Error ? err.message : String(err)}`,
+        { source: "AgentMemory.forget", cause: err, id }
+      );
+    }
+  }
+
+  async update(
+    id: string,
+    data: Partial<Pick<MemoryItem, "importance" | "embedding" | "metadata" | "content">> & {
+      tier?: MemoryTier;
+      userId?: string;
+      agentId?: string;
+    }
+  ): Promise<void> {
+    try {
+      await this.adapter.update(id, data);
+    } catch (err) {
+      throw new StorageError(
+        `Failed to update item ${id}: ${err instanceof Error ? err.message : String(err)}`,
+        { source: "AgentMemory.update", cause: err, id }
+      );
+    }
   }
 
   /**
@@ -105,9 +180,8 @@ export class AgentMemory {
    */
   async clear(sessionId?: string): Promise<void> {
     const sid = this.resolveSessionId(sessionId);
-    // Support adapters that implement clear() natively for efficiency
-    if ("clear" in this.adapter && typeof (this.adapter as { clear: unknown }).clear === "function") {
-      await (this.adapter as { clear: (sessionId: string) => Promise<void> }).clear(sid);
+    if (this.adapter.clear) {
+      await this.adapter.clear(sid);
       return;
     }
     // Fallback: delete item by item
@@ -122,6 +196,7 @@ export class AgentMemory {
   async recall(query: string, options: RecallOptions = {}): Promise<RecallResult[]> {
     const sessionId = this.resolveSessionId(options.sessionId);
     const topK = options.topK ?? this.retrieval.topK;
+    const minScore = options.minScore ?? this.retrieval.minScore;
     const candidateLimit = Math.max(topK, topK * this.retrieval.candidateMultiplier);
 
     // If no embed function is configured, fall back to recency+importance only
@@ -130,28 +205,47 @@ export class AgentMemory {
       try {
         const [vec] = await this.embed([query]);
         queryVector = vec ?? null;
-      } catch {
-        console.warn("[agent-memory] Embedding failed during recall; falling back to recency+importance scoring.");
+        if (!queryVector && this.debug) {
+          console.warn("[agent-memory] embed returned empty vector; recall will use recency+importance only");
+        }
+      } catch (err) {
+        if (this.debug) {
+          console.warn(
+            `[agent-memory] Embedding failed during recall; falling back to recency+importance scoring. cause: ${(err as Error).message}`
+          );
+        }
       }
     }
 
-    let candidates;
+    let candidates: Array<{ item: MemoryItem; similarity?: number }>;
+    const searchOptions = {
+      sessionId,
+      limit: candidateLimit,
+      ...(options.kinds ? { kinds: options.kinds } : {}),
+      ...(options.tiers ? { tiers: options.tiers } : {}),
+      ...(options.userId ? { userId: options.userId } : {}),
+      ...(options.agentId ? { agentId: options.agentId } : {})
+    };
+
     if (queryVector) {
-      candidates = await this.adapter.search(queryVector, {
-        sessionId,
-        limit: candidateLimit,
-        ...(options.kinds ? { kinds: options.kinds } : {})
-      });
+      candidates = await this.adapter.search(queryVector, searchOptions);
     } else {
       // No vector — fetch all and score without similarity
       const allItems = await this.adapter.getBySession(sessionId);
-      const filtered = options.kinds
-        ? allItems.filter((item) => options.kinds!.includes(item.kind))
-        : allItems;
+      const filtered = this.applyKindTierFilter(allItems, options);
       candidates = filtered
         .slice(0, candidateLimit)
-        .map((item) => ({ item, similarity: undefined as number | undefined }));
+        .map((item) => ({ item }) as { item: MemoryItem; similarity?: number });
     }
+
+    // Pre-compute keyword scores if keyword weight > 0
+    const keywordMap =
+      this.retrieval.weights.keyword > 0
+        ? bm25Scores(
+            query,
+            candidates.map((c) => c.item)
+          )
+        : new Map<string, number>();
 
     const now = Date.now();
     const weights = this.retrieval.weights;
@@ -159,19 +253,19 @@ export class AgentMemory {
     const scored = candidates
       .map((candidate) => {
         const item = candidate.item;
-        const similarity = queryVector
-          ? this.resolveSimilarity(candidate.similarity, item, queryVector)
-          : 0;
+        const similarity = queryVector ? this.resolveSimilarity(candidate.similarity, item, queryVector) : 0;
+        const keyword = keywordMap.get(item.id) ?? 0;
         const recency = recencyScore(item.timestamp, now, this.retrieval.recencyLambda);
         const importance = clamp(item.importance ?? 0.5, 0, 1);
         const score =
           weights.similarity * similarity +
+          weights.keyword * keyword +
           weights.recency * recency +
           weights.importance * importance;
 
-        return { item, score, similarity, recency, importance };
+        return { item, score, similarity, keyword, recency, importance };
       })
-      .filter((r) => (options.minScore == null ? true : r.score >= options.minScore))
+      .filter((r) => (minScore > 0 ? r.score >= minScore : true))
       .filter((r) => (options.filter ? options.filter(r.item) : true))
       .sort((a, b) => b.score - a.score);
 
@@ -235,6 +329,7 @@ export class AgentMemory {
       id: createMemoryId("summary"),
       kind: "summary",
       sessionId,
+      tier: "session",
       timestamp: Date.now(),
       importance: 0.7,
       content: summaryText,
@@ -247,10 +342,7 @@ export class AgentMemory {
     return summary;
   }
 
-  async inject(
-    messages: MemoryMessage[],
-    options: InjectOptions = {}
-  ): Promise<MemoryMessage[]> {
+  async inject(messages: MemoryMessage[], options: InjectOptions = {}): Promise<MemoryMessage[]> {
     const query = options.query ?? this.lastUserMessage(messages)?.content;
     if (!query) {
       return [...messages];
@@ -261,25 +353,17 @@ export class AgentMemory {
       return [...messages];
     }
 
-    const memoryBlock =
-      options.format?.(recalled) ??
-      formatRecallResults(recalled, options.maxContentLength);
+    const memoryBlock = options.format?.(recalled) ?? formatRecallResults(recalled, options.maxContentLength);
     const memoryMessage: MemoryMessage = {
       role: options.role ?? "system",
       name: options.name ?? "memory",
       content: memoryBlock
     };
 
-    const stripped = messages.filter(
-      (message) => !(message.role === "system" && message.name === "memory")
-    );
+    const stripped = messages.filter((message) => !(message.role === "system" && message.name === "memory"));
     const insertAt = this.firstNonSystemIndex(stripped);
 
-    return [
-      ...stripped.slice(0, insertAt),
-      memoryMessage,
-      ...stripped.slice(insertAt)
-    ];
+    return [...stripped.slice(0, insertAt), memoryMessage, ...stripped.slice(insertAt)];
   }
 
   async getBySession(sessionId?: string): Promise<MemoryItem[]> {
@@ -288,30 +372,46 @@ export class AgentMemory {
 
   /**
    * Return item counts for a session (or all sessions via adapter.getBySession).
+   * Reports byKind and byTier, plus the unique user/agent ids encountered.
    */
   async stats(sessionId?: string): Promise<MemoryStats> {
     const sid = this.resolveSessionId(sessionId);
     const items = await this.adapter.getBySession(sid);
     const byKind: MemoryStats["byKind"] = { entry: 0, fact: 0, summary: 0 };
+    const byTier: Record<string, number> = {};
+    const userIds = new Set<string>();
+    const agentIds = new Set<string>();
     for (const item of items) {
       byKind[item.kind] += 1;
+      const tier = item.tier ?? "session";
+      byTier[tier] = (byTier[tier] ?? 0) + 1;
+      if (item.userId) userIds.add(item.userId);
+      if (item.agentId) agentIds.add(item.agentId);
     }
-    return { total: items.length, byKind, sessionIds: [sid] };
+    const stats: MemoryStats = {
+      total: items.length,
+      byKind,
+      sessionIds: [sid]
+    };
+    if (Object.keys(byTier).length > 0) {
+      stats.byTier = byTier as Partial<Record<MemoryTier, number>>;
+    }
+    if (userIds.size > 0) stats.userIds = Array.from(userIds);
+    if (agentIds.size > 0) stats.agentIds = Array.from(agentIds);
+    return stats;
   }
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 
   private async rememberEntry(input: RememberEntryInput): Promise<MemoryEntry> {
     if (!input.content || input.content.trim().length === 0) {
-      throw new Error("[agent-memory] Cannot store an entry with empty content.");
+      throw new ConfigurationError("Cannot store an entry with empty content.", {
+        source: "AgentMemory.rememberEntry"
+      });
     }
 
-    // Auto-embed entries (parity with rememberFact)
     const embedding =
-      input.embedding !== undefined
-        ? input.embedding
-        : await this.tryEmbedSingle(input.content);
-
+      input.embedding !== undefined ? input.embedding : await this.tryEmbedSingle(input.content);
     const entry: MemoryEntry = {
       id: input.id ?? createMemoryId("entry"),
       kind: "entry",
@@ -321,12 +421,14 @@ export class AgentMemory {
       timestamp: input.timestamp ?? Date.now(),
       importance: clamp(input.importance ?? 0.5, 0, 1)
     };
-    if (embedding !== null && embedding !== undefined) {
-      entry.embedding = embedding;
-    }
-    if (input.metadata) {
-      entry.metadata = input.metadata;
-    }
+    const tier = this.resolveTier(input.tier);
+    if (tier) entry.tier = tier;
+    const userId = input.userId ?? this.defaultUserId;
+    if (userId) entry.userId = userId;
+    const agentId = input.agentId ?? this.defaultAgentId;
+    if (agentId) entry.agentId = agentId;
+    if (embedding) entry.embedding = embedding;
+    if (input.metadata) entry.metadata = input.metadata;
 
     await this.adapter.add(entry);
     return entry;
@@ -346,12 +448,14 @@ export class AgentMemory {
       timestamp: input.timestamp ?? Date.now(),
       importance: clamp(input.importance ?? 0.5, 0, 1)
     };
-    if (embedding !== null && embedding !== undefined) {
-      fact.embedding = embedding;
-    }
-    if (input.metadata) {
-      fact.metadata = input.metadata;
-    }
+    const tier = this.resolveTier(input.tier);
+    if (tier) fact.tier = tier;
+    const userId = input.userId ?? this.defaultUserId;
+    if (userId) fact.userId = userId;
+    const agentId = input.agentId ?? this.defaultAgentId;
+    if (agentId) fact.agentId = agentId;
+    if (embedding) fact.embedding = embedding;
+    if (input.metadata) fact.metadata = input.metadata;
 
     await this.adapter.add(fact);
     return fact;
@@ -362,25 +466,91 @@ export class AgentMemory {
       return null;
     }
 
+    if (this.embedCache) {
+      const cached = this.embedCache.get(text);
+      if (cached) {
+        if (this.debug) console.debug(`[agent-memory] embed cache hit (${text.length} chars)`);
+        return cached;
+      }
+    }
+
     try {
       const [vector] = await this.embed([text]);
+      if (vector && this.embedCache) this.embedCache.set(text, vector);
       return vector ?? null;
-    } catch {
+    } catch (err) {
+      if (this.debug) console.warn(`[agent-memory] embed failed: ${(err as Error).message}`);
       return null;
     }
   }
 
   private async embed(texts: string[]): Promise<number[][]> {
-    if (this.embedBatchFn) {
-      return this.embedBatchFn(texts);
-    }
-    if (this.embedFn) {
-      return Promise.all(texts.map((text) => this.embedFn!(text)));
+    if (texts.length === 0) return [];
+
+    if (this.embedCache) {
+      // Split into cache-hits and cache-misses
+      const hits: Array<{ index: number; value: number[] }> = [];
+      const misses: Array<{ index: number; text: string }> = [];
+      texts.forEach((text, index) => {
+        const cached = this.embedCache!.get(text);
+        if (cached) hits.push({ index, value: cached });
+        else misses.push({ index, text });
+      });
+
+      const results: number[][] = new Array(texts.length);
+      for (const hit of hits) results[hit.index] = hit.value;
+      if (misses.length === 0) return results;
+
+      const fresh = await this.embedUncached(misses.map((m) => m.text));
+      for (let i = 0; i < misses.length; i += 1) {
+        const vector = fresh[i]!;
+        const meta = misses[i]!;
+        results[meta.index] = vector;
+        this.embedCache.set(meta.text, vector);
+      }
+      return results;
     }
 
-    throw new Error(
-      "No embedding function configured. Provide embedding.embedFn or embedding.embedBatchFn."
+    return this.embedUncached(texts);
+  }
+
+  private async embedUncached(texts: string[]): Promise<number[][]> {
+    if (this.embedBatchFn) {
+      const result = await this.embedBatchFn(texts);
+      if (this.debug) console.debug(`[agent-memory] batch embed (${texts.length} texts)`);
+      return result;
+    }
+    if (this.embedFn) {
+      const result = await Promise.all(texts.map((text) => this.embedFn!(text)));
+      if (this.debug) console.debug(`[agent-memory] parallel single embed (${texts.length} texts)`);
+      return result;
+    }
+
+    throw new ConfigurationError(
+      "No embedding function configured. Provide embedding.embedFn or embedding.embedBatchFn.",
+      { source: "AgentMemory.embed" }
     );
+  }
+
+  private applyKindTierFilter(
+    items: MemoryItem[],
+    options: {
+      kinds?: ReadonlyArray<MemoryItem["kind"]>;
+      tiers?: ReadonlyArray<MemoryTier>;
+      userId?: string;
+      agentId?: string;
+    }
+  ): MemoryItem[] {
+    return items.filter((item) => {
+      if (options.kinds && !options.kinds.includes(item.kind)) return false;
+      if (options.tiers) {
+        const tier = item.tier ?? "session";
+        if (!options.tiers.includes(tier)) return false;
+      }
+      if (options.userId && item.userId !== options.userId) return false;
+      if (options.agentId && item.agentId !== options.agentId) return false;
+      return true;
+    });
   }
 
   private resolveSimilarity(
@@ -420,10 +590,14 @@ export class AgentMemory {
     return sessionId ?? this.defaultSessionId;
   }
 
+  private resolveTier(tier: MemoryTier | undefined): MemoryTier | undefined {
+    if (tier) return tier;
+    if (this.defaultTier !== "session") return this.defaultTier;
+    return undefined;
+  }
+
   private defaultSummary(entries: MemoryEntry[]): string {
-    const lines = entries.map(
-      (entry) => `- ${entry.role}: ${entry.content.replace(/\s+/g, " ").trim()}`
-    );
+    const lines = entries.map((entry) => `- ${entry.role}: ${entry.content.replace(/\s+/g, " ").trim()}`);
     return `Summary of previous conversation:\n${lines.join("\n")}`;
   }
 
@@ -442,7 +616,6 @@ export class AgentMemory {
 
     const picked: MemoryEntry[] = [];
     let candidateIndex = 0;
-    // Fix: track remaining against the candidates we can remove, not total entries
     let remainingTurns = entries.length;
     let remainingTokens = entries.reduce(
       (sum, entry) => sum + this.summarisation.tokenCounter(entry.content),

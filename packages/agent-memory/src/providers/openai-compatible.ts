@@ -4,6 +4,8 @@
  */
 import type { SummariseFn } from "../types/config";
 import { buildConversationText, buildSummaryPrompt, fetchJSON, type MemoryProvider } from "./types";
+import type { RequestOptions } from "../utils/http";
+import { DEFAULT_RETRY_POLICY } from "../utils/http";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,16 +20,24 @@ export interface OpenAIProviderOptions {
   chatModel?: string;
   /** Extra headers merged into every request (e.g. `organization`). */
   extraHeaders?: Record<string, string>;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
-export interface NVIDIAProviderOptions extends Omit<OpenAIProviderOptions, "baseURL" | "embeddingModel" | "chatModel"> {
+export interface NVIDIAProviderOptions extends Omit<
+  OpenAIProviderOptions,
+  "baseURL" | "embeddingModel" | "chatModel"
+> {
   embeddingModel?: string; // default: nvidia/nv-embedqa-e5-v5
-  chatModel?: string;      // default: meta/llama-3.1-8b-instruct
+  chatModel?: string; // default: meta/llama-3.1-8b-instruct
 }
 
-export interface MistralProviderOptions extends Omit<OpenAIProviderOptions, "baseURL" | "embeddingModel" | "chatModel"> {
+export interface MistralProviderOptions extends Omit<
+  OpenAIProviderOptions,
+  "baseURL" | "embeddingModel" | "chatModel"
+> {
   embeddingModel?: string; // default: mistral-embed
-  chatModel?: string;      // default: mistral-small-latest
+  chatModel?: string; // default: mistral-small-latest
 }
 
 export interface AzureOpenAIProviderOptions {
@@ -41,6 +51,8 @@ export interface AzureOpenAIProviderOptions {
   chatDeployment?: string;
   /** Azure OpenAI API version. Defaults to `2024-02-01`. */
   apiVersion?: string;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
 // ─── Internal ────────────────────────────────────────────────────────────────
@@ -53,7 +65,10 @@ interface ChatResponse {
   choices: { message: { content: string } }[];
 }
 
-function makeAuthHeaders(apiKey: string | undefined, extra: Record<string, string> = {}): Record<string, string> {
+function makeAuthHeaders(
+  apiKey: string | undefined,
+  extra: Record<string, string> = {}
+): Record<string, string> {
   const auth = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
   return { ...auth, ...extra };
 }
@@ -63,13 +78,15 @@ function makeOpenAICompatible(
   baseURL: string,
   embeddingModel: string,
   chatModel: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  requestOptions?: RequestOptions
 ): MemoryProvider {
   const embedFn = async (text: string): Promise<number[]> => {
     const res = await fetchJSON<EmbedResponse>(
       `${baseURL}/embeddings`,
       { model: embeddingModel, input: text },
-      headers
+      headers,
+      { ...DEFAULT_RETRY_POLICY, ...(requestOptions ?? {}), context: `${name} embed` }
     );
     const first = res.data[0];
     if (!first) throw new Error(`[agent-memory] ${name} embeddings returned no data.`);
@@ -81,7 +98,8 @@ function makeOpenAICompatible(
     const res = await fetchJSON<EmbedResponse>(
       `${baseURL}/embeddings`,
       { model: embeddingModel, input: texts },
-      headers
+      headers,
+      { ...DEFAULT_RETRY_POLICY, ...(requestOptions ?? {}), context: `${name} embed-batch` }
     );
     return res.data.map((d) => d.embedding);
   };
@@ -100,12 +118,15 @@ function makeOpenAICompatible(
         max_tokens: 512,
         temperature: 0.3
       },
-      headers
+      headers,
+      { ...DEFAULT_RETRY_POLICY, ...(requestOptions ?? {}), context: `${name} summarise` }
     );
     return res.choices[0]?.message.content.trim() ?? buildConversationText(entries);
   };
 
-  return { name, embedFn, embedBatchFn, summarise };
+  const provider: MemoryProvider = { name, embedFn, embedBatchFn, summarise };
+  if (requestOptions) provider.defaultRequestOptions = requestOptions;
+  return provider;
 }
 
 // ─── Provider factories ───────────────────────────────────────────────────────
@@ -123,7 +144,8 @@ export function openaiProvider(options: OpenAIProviderOptions): MemoryProvider {
     options.baseURL ?? "https://api.openai.com/v1",
     options.embeddingModel ?? "text-embedding-3-small",
     options.chatModel ?? "gpt-4o-mini",
-    makeAuthHeaders(options.apiKey, options.extraHeaders)
+    makeAuthHeaders(options.apiKey, options.extraHeaders),
+    options.requestOptions
   );
 }
 
@@ -139,7 +161,8 @@ export function nvidiaProvider(options: NVIDIAProviderOptions): MemoryProvider {
     "https://integrate.api.nvidia.com/v1",
     options.embeddingModel ?? "nvidia/nv-embedqa-e5-v5",
     options.chatModel ?? "meta/llama-3.1-8b-instruct",
-    makeAuthHeaders(options.apiKey, options.extraHeaders)
+    makeAuthHeaders(options.apiKey, options.extraHeaders),
+    options.requestOptions
   );
 }
 
@@ -155,7 +178,8 @@ export function mistralProvider(options: MistralProviderOptions): MemoryProvider
     "https://api.mistral.ai/v1",
     options.embeddingModel ?? "mistral-embed",
     options.chatModel ?? "mistral-small-latest",
-    makeAuthHeaders(options.apiKey, options.extraHeaders)
+    makeAuthHeaders(options.apiKey, options.extraHeaders),
+    options.requestOptions
   );
 }
 
@@ -174,6 +198,7 @@ export function azureOpenAIProvider(options: AzureOpenAIProviderOptions): Memory
   const apiVersion = options.apiVersion ?? "2024-02-01";
   const endpoint = options.endpoint.replace(/\/$/, "");
   const headers = { "api-key": options.apiKey };
+  const requestOptions = options.requestOptions;
 
   const embedURL = `${endpoint}/openai/deployments/${options.embeddingDeployment}/embeddings?api-version=${apiVersion}`;
   const chatURL = options.chatDeployment
@@ -181,7 +206,11 @@ export function azureOpenAIProvider(options: AzureOpenAIProviderOptions): Memory
     : null;
 
   const embedFn = async (text: string): Promise<number[]> => {
-    const res = await fetchJSON<EmbedResponse>(embedURL, { input: text }, headers);
+    const res = await fetchJSON<EmbedResponse>(embedURL, { input: text }, headers, {
+      ...DEFAULT_RETRY_POLICY,
+      ...(requestOptions ?? {}),
+      context: "azure embed"
+    });
     const first = res.data[0];
     if (!first) throw new Error("[agent-memory] Azure OpenAI embeddings returned no data.");
     return first.embedding;
@@ -189,7 +218,11 @@ export function azureOpenAIProvider(options: AzureOpenAIProviderOptions): Memory
 
   const embedBatchFn = async (texts: string[]): Promise<number[][]> => {
     if (texts.length === 0) return [];
-    const res = await fetchJSON<EmbedResponse>(embedURL, { input: texts }, headers);
+    const res = await fetchJSON<EmbedResponse>(embedURL, { input: texts }, headers, {
+      ...DEFAULT_RETRY_POLICY,
+      ...(requestOptions ?? {}),
+      context: "azure embed-batch"
+    });
     return res.data.map((d) => d.embedding);
   };
 
@@ -202,7 +235,12 @@ export function azureOpenAIProvider(options: AzureOpenAIProviderOptions): Memory
             max_tokens: 512,
             temperature: 0.3
           },
-          headers
+          headers,
+          {
+            ...DEFAULT_RETRY_POLICY,
+            ...(requestOptions ?? {}),
+            context: "azure summarise"
+          }
         );
         return res.choices[0]?.message.content.trim() ?? buildConversationText(entries);
       }
@@ -216,6 +254,9 @@ export function azureOpenAIProvider(options: AzureOpenAIProviderOptions): Memory
 
   if (summarise) {
     provider.summarise = summarise;
+  }
+  if (requestOptions) {
+    provider.defaultRequestOptions = requestOptions;
   }
 
   return provider;

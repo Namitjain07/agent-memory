@@ -1,17 +1,21 @@
 # @namitjain.india/agent-memory-react
 
-[![npm version](https://img.shields.io/npm/v/@namitjain.india/agent-memory-react)](https://www.npmjs.com/package/@namitjain.india/agent-memory-react)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub stars](https://img.shields.io/github/stars/Namitjain07/agent-memory?style=social)](https://github.com/Namitjain07/agent-memory/stargazers)
+> **React hook for agent-memory.**
+> `useMemory()` for LLM chat UIs with loading/error state, recall, remember, summarise, and session management. Works with any agent-memory storage backend.
 
-React hook utilities for [@namitjain.india/agent-memory](https://www.npmjs.com/package/@namitjain.india/agent-memory). Provides easy stateful integration with React applications.
+[![npm version](https://img.shields.io/npm/v/@namitjain.india/agent-memory-react?color=blueviolet&label=npm)](https://www.npmjs.com/package/@namitjain.india/agent-memory-react)
+[![npm downloads](https://img.shields.io/npm/dm/@namitjain.india/agent-memory-react?color=blue)](https://www.npmjs.com/package/@namitjain.india/agent-memory-react)
+[![CI](https://img.shields.io/github/actions/workflow/status/Namitjain07/agent-memory/ci.yml?label=CI)](https://github.com/Namitjain07/agent-memory/actions)
+[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18%20%7C%2019-61dafb?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 
-[GitHub](https://github.com/Namitjain07/agent-memory) | [Report Bug](https://github.com/Namitjain07/agent-memory/issues) | [Request Feature](https://github.com/Namitjain07/agent-memory/issues)
+Drop-in React hook for [agent-memory](https://www.npmjs.com/package/@namitjain.india/agent-memory).
 
-## Installation
+## Install
 
 ```bash
-npm install @namitjain.india/agent-memory-react react
+npm install @namitjain.india/agent-memory @namitjain.india/agent-memory-react react
 ```
 
 ## Usage
@@ -26,202 +30,48 @@ function Chat() {
     remember,
     recall,
     forget,
+    update,
     inject,
+    summarise,
+    clearSession,
+    stats,
+    isLoading,
+    error,
     memory
-  } = useMemory("user-123", {
-    embedding: {
-      embedFn: async (text) => [text.length / 100, 0.5]
-    }
+  } = useMemory("session-1", {
+    embedding: createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
   });
 
-  const onUserMessage = async (content: string) => {
-    // Remember the user message
-    await remember({ role: "user", content });
-
-    // Recall relevant memories
-    const context = await recall(content, { topK: 4 });
-
-    // Inject context into messages and send to LLM
-    const enhancedMessages = await inject([
-      ...messages,
-      { role: "user", content }
-    ], { query: content });
-
-    // ... send to LLM and get response
+  const handleSend = async (text: string) => {
+    await remember({ role: "user", content: text });
+    const context = await recall(text, { topK: 4 });
+    // build your prompt with context...
   };
 
   return (
-    <div>
-      <p>Messages: {messages.length}</p>
-      <p>Memory items: {(await memory.getBySession()).length}</p>
-    </div>
+    <>
+      <button onClick={() => clearSession()}>Reset</button>
+      {error && <p>Error: {error.message}</p>}
+      {/* ... */}
+    </>
   );
 }
 ```
 
-## useMemory
+## Features
 
-```tsx
-const result = useMemory(sessionId, options);
-```
+- ⚛️ **React 18 + 19** support
+- 🎯 **Loading + error state** out of the box
+- 🪝 **Stable callbacks** — re-renders don't recreate handlers
+- 💾 **Backend-agnostic** — works with in-memory, SQLite, or Postgres adapters
+- 🔄 **Auto message sync** — assistant replies are added to the messages list
+- 🧪 **Fully typed** — full TypeScript support, no `any`
 
-### Parameters
+## Works with
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `sessionId` | `string` | Unique session identifier |
-| `options` | `UseMemoryOptions` | Configuration options |
-
-### Options
-
-Extends `AgentMemoryOptions` from the core package, with these additions:
-
-| Option | Type | Description |
-|--------|------|-------------|
-| `memory` | `AgentMemory` | Provide custom AgentMemory instance |
-| `initialMessages` | `MemoryMessage[]` | Initial messages array |
-
-### Return Value
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `messages` | `MemoryMessage[]` | Current message state |
-| `setMessages` | `Dispatch<SetStateAction<MemoryMessage[]>>` | Set messages directly |
-| `remember` | `(input) => Promise<MemoryItem>` | Store a memory |
-| `recall` | `(query, options?) => Promise<RecallResult[]>` | Retrieve memories |
-| `forget` | `(id: string) => Promise<void>` | Delete a memory |
-| `inject` | `(messages, options?) => Promise<MemoryMessage[]>` | Inject memories into messages |
-| `memory` | `AgentMemory` | Direct access to AgentMemory instance |
-
-### remember
-
-Store memories. Automatically updates the messages array for entries.
-
-```tsx
-// Store conversation entry
-await remember({
-  role: "user",
-  content: "Hello!",
-  importance: 0.8
-});
-
-// Store a fact
-await remember({
-  kind: "fact",
-  key: "preferred_language",
-  value: "TypeScript"
-});
-```
-
-### recall
-
-Retrieve relevant memories using semantic search.
-
-```tsx
-const results = await recall("What do I prefer?", {
-  topK: 3,
-  kinds: ["entry", "fact"]
-});
-```
-
-### forget
-
-Delete a memory by ID.
-
-```tsx
-await forget("memory-entry-id");
-```
-
-### inject
-
-Inject retrieved memories as a system message.
-
-```tsx
-const enhanced = await inject(currentMessages, {
-  query: "last message content",
-  topK: 3
-});
-```
-
-### Direct Memory Access
-
-For advanced use cases, access the underlying AgentMemory instance:
-
-```tsx
-const { memory } = useMemory("session-1");
-
-// Call any AgentMemory method directly
-await memory.summarise({ sessionId: "session-1" });
-const allMemories = await memory.getBySession();
-```
-
-## Example: Complete Chat Component
-
-```tsx
-import { useState } from "react";
-import { useMemory } from "@namitjain.india/agent-memory-react";
-
-export function Chat() {
-  const [input, setInput] = useState("");
-  const { messages, remember, recall, inject, memory } = useMemory("chat-1", {
-    embedding: { embedFn: async (t) => [t.length / 100] }
-  });
-
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    // Store user message
-    await remember({ role: "user", content: input });
-
-    // Inject context and prepare for LLM
-    const withContext = await inject(
-      [...messages, { role: "user", content: input }],
-      { topK: 5 }
-    );
-
-    // Simulate LLM call
-    const response = "I remember you prefer TypeScript!";
-
-    // Store assistant response
-    await remember({ role: "assistant", content: response });
-
-    setInput("");
-  };
-
-  return (
-    <div>
-      <div className="messages">
-        {messages.map((m, i) => (
-          <div key={i} className={m.role}>
-            {m.content}
-          </div>
-        ))}
-      </div>
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-      />
-      <button onClick={sendMessage}>Send</button>
-    </div>
-  );
-}
-```
-
-## Requirements
-
-- React >= 18.0.0 or React >= 19.0.0
-- @namitjain.india/agent-memory >= 0.1.0
-
-## Contributing & Collaboration
-
-We welcome contributions, feedback, and feature requests!
-
-- **Bug Reports**: [Open an issue](https://github.com/Namitjain07/agent-memory/issues)
-- **Feature Requests**: [Share it](https://github.com/Namitjain07/agent-memory/issues)
-- **Pull Requests**: [Submit a PR](https://github.com/Namitjain07/agent-memory/pulls)
-
-If this project helps you, please consider [starring it on GitHub](https://github.com/Namitjain07/agent-memory)!
+- **React**: 18.x · 19.x
+- **Frameworks**: Next.js (App Router & Pages) · Remix · Vite · CRA
+- **Storage**: any agent-memory adapter (in-memory, SQLite, Postgres)
 
 ## License
 

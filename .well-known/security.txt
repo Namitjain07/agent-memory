@@ -1,0 +1,5 @@
+Contact: https://github.com/Namitjain07/agent-memory/security/advisories/new
+Contact: mailto:jnamit684@gmail.com
+Expires: 2027-12-31T23:59:59z
+Preferred-Languages: en
+Canonical: https://github.com/Namitjain07/agent-memory/blob/main/SECURITY.md

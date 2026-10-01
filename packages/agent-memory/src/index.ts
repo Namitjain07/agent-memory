@@ -1,13 +1,58 @@
 export { InMemoryAdapter } from "./adapters/in-memory";
 export { AgentMemory } from "./core/agent-memory";
 export { withMemory } from "./middleware/with-memory";
-export {
-  createBatchEmbedFn,
-  createOpenAIEmbedFn,
-  createOpenAIBatchEmbedFn
-} from "./utils/embed-helpers";
+export { createBatchEmbedFn, createOpenAIEmbedFn, createOpenAIBatchEmbedFn } from "./utils/embed-helpers";
 
-// ─── Providers ────────────────────────────────────────────────────────────────
+// ─── Error classes ───────────────────────────────────────────────────────────
+export {
+  MemoryError,
+  EmbeddingError,
+  ProviderError,
+  NetworkError,
+  TimeoutError,
+  AbortError,
+  StorageError,
+  ConfigurationError,
+  isMemoryError
+} from "./utils/errors";
+
+// ─── HTTP utilities ──────────────────────────────────────────────────────────
+export {
+  fetchJSON,
+  fetchGetJSON,
+  DEFAULT_RETRY_POLICY,
+  type RetryPolicy,
+  type RequestOptions
+} from "./utils/http";
+
+// ─── Encryption utilities ───────────────────────────────────────────────────
+export {
+  encrypt,
+  decrypt,
+  generateKey,
+  keyFromPassphrase,
+  envelopeToString,
+  envelopeFromString,
+  type EncryptedEnvelope
+} from "./utils/encryption";
+
+// ─── LRU cache ──────────────────────────────────────────────────────────────
+export { LRU } from "./utils/lru";
+export type { EmbeddingCache } from "./types/config";
+
+// ─── BM25 keyword scoring ───────────────────────────────────────────────────
+export { bm25Scores, tokenize } from "./utils/bm25";
+
+// ─── PII redaction ──────────────────────────────────────────────────────────
+export { piiScan, redactPII, type PIIRedactOptions, type PIIScanResult, type PIICategory } from "./utils/pii";
+
+// ─── Scoring / merging utilities ─────────────────────────────────────────────
+export { cosineSimilarity, normalizeSimilarity, clamp } from "./utils/math";
+export { recencyScore } from "./utils/time";
+export { approximateTokenCount } from "./utils/tokens";
+export { deduplicateSimilarFacts, mergeSimilarEntries } from "./utils/memory-ops";
+
+// ─── Providers ───────────────────────────────────────────────────────────────
 export {
   createProvider,
   openaiProvider,
@@ -36,7 +81,7 @@ export type {
   OllamaProviderOptions
 } from "./providers/index";
 
-// ─── Adapter types ────────────────────────────────────────────────────────────
+// ─── Adapter types ───────────────────────────────────────────────────────────
 export type {
   MemoryAdapter,
   MemorySearchCandidate,
@@ -44,7 +89,7 @@ export type {
   MemoryUpdate
 } from "./types/adapter";
 
-// ─── Config types ─────────────────────────────────────────────────────────────
+// ─── Config types ────────────────────────────────────────────────────────────
 export type {
   AgentFunction,
   AgentMemoryOptions,
@@ -65,10 +110,11 @@ export type {
   SummariseOptions,
   TokenCounterFn,
   WithMemoryOptions,
-  WithMemoryRunOptions
+  WithMemoryRunOptions,
+  MemoryTier
 } from "./types/config";
 
-// ─── Memory types ─────────────────────────────────────────────────────────────
+// ─── Memory types ────────────────────────────────────────────────────────────
 export type {
   BaseMemoryItem,
   MemoryEntry,

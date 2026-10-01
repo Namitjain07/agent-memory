@@ -7,3 +7,4 @@ dist/
 npm-debug.log*
 .env
 .env.*
+APPLY-AND-PUBLISH.md

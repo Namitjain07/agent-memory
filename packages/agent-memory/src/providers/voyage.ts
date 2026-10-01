@@ -3,6 +3,8 @@
  * Docs: https://docs.voyageai.com/reference/embeddings-api
  */
 import { fetchJSON, type MemoryProvider } from "./types";
+import type { RequestOptions } from "../utils/http";
+import { DEFAULT_RETRY_POLICY } from "../utils/http";
 
 export interface VoyageProviderOptions {
   apiKey: string;
@@ -15,6 +17,8 @@ export interface VoyageProviderOptions {
    */
   inputType?: "query" | "document";
   baseURL?: string;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
 interface VoyageEmbedResponse {
@@ -33,13 +37,19 @@ export function voyageProvider(options: VoyageProviderOptions): MemoryProvider {
   const model = options.model ?? "voyage-3";
   const inputType = options.inputType ?? "document";
   const headers = { Authorization: `Bearer ${options.apiKey}` };
+  const requestOptions = options.requestOptions;
 
   const embedBatch = async (texts: string[]): Promise<number[][]> => {
     if (texts.length === 0) return [];
     const res = await fetchJSON<VoyageEmbedResponse>(
       `${base}/embeddings`,
       { model, input: texts, input_type: inputType },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "voyage embed-batch"
+      }
     );
     return res.data.map((d) => d.embedding);
   };
@@ -50,10 +60,12 @@ export function voyageProvider(options: VoyageProviderOptions): MemoryProvider {
     return vec;
   };
 
-  return {
+  const provider: MemoryProvider = {
     name: "voyage",
     embedFn,
     embedBatchFn: embedBatch
     // No summarise — Voyage is an embeddings-only service
   };
+  if (requestOptions) provider.defaultRequestOptions = requestOptions;
+  return provider;
 }

@@ -1,0 +1,101 @@
+{
+  "name": "@namitjain.india/agent-memory-cli",
+  "version": "0.1.0",
+  "description": "CLI inspector for agent-memory. List, search, show, export, and inspect any agent-memory SQLite store from the terminal. Output as table, JSON, or TSV. Read-only by design.",
+  "keywords": [
+    "agent-memory",
+    "ai",
+    "ai-memory",
+    "agent",
+    "better-sqlite3",
+    "cli",
+    "cli-tool",
+    "command-line",
+    "debug",
+    "devtools",
+    "inspect",
+    "inspector",
+    "llm",
+    "llm-agent",
+    "memory",
+    "memory-engine",
+    "sqlite",
+    "terminal",
+    "tooling",
+    "typescript"
+  ],
+  "bin": {
+    "agent-memory": "./bin/agent-memory.mjs"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Namit Jain",
+    "url": "https://github.com/Namitjain07"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git",
+    "directory": "packages/agent-memory-cli"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Namitjain07"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@namitjain.india/agent-memory": "*",
+    "@namitjain.india/agent-memory-sqlite": "*"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.4.1"
+  }
+}

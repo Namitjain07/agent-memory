@@ -1,0 +1,28 @@
+changelog:
+  exclude:
+    labels:
+      - "ignore-for-release"
+    authors:
+      - dependabot
+  categories:
+    - title: "Breaking changes"
+      labels:
+        - "breaking"
+    - title: "New features"
+      labels:
+        - "feature"
+        - "enhancement"
+    - title: "Bug fixes"
+      labels:
+        - "bug"
+        - "fix"
+    - title: "Documentation"
+      labels:
+        - "documentation"
+        - "docs"
+    - title: "Performance"
+      labels:
+        - "performance"
+    - title: "Other changes"
+      labels:
+        - "*"

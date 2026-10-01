@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  AgentMemory,
-  withMemory,
-  type MemoryMessage,
-  type MemoryItem
-} from "../src";
+import { AgentMemory, withMemory, type MemoryMessage, type MemoryItem } from "../src";
 
 // ─── Test embedding function ─────────────────────────────────────────────────
 
@@ -97,7 +92,13 @@ describe("AgentMemory — retrieval", () => {
 
   it("applies minScore filter", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    await memory.remember({ kind: "fact", sessionId: "s-minscore", key: "a", value: "Python", importance: 0.1 });
+    await memory.remember({
+      kind: "fact",
+      sessionId: "s-minscore",
+      key: "a",
+      value: "Python",
+      importance: 0.1
+    });
 
     const allResults = await memory.recall("typescript", { sessionId: "s-minscore" });
     const filtered = await memory.recall("typescript", { sessionId: "s-minscore", minScore: 0.99 });
@@ -196,8 +197,7 @@ describe("AgentMemory — summarisation", () => {
       summarisation: {
         maxTurns: 4,
         keepRecentTurns: 2,
-        summariseFn: async ({ entries }) =>
-          `Summarised ${entries.length} messages into one chunk.`
+        summariseFn: async ({ entries }) => `Summarised ${entries.length} messages into one chunk.`
       }
     });
 
@@ -261,9 +261,7 @@ describe("withMemory middleware", () => {
 
     const wrapped = withMemory(
       async (messages: MemoryMessage[]) => {
-        const hasMemory = messages.some(
-          (message) => message.role === "system" && message.name === "memory"
-        );
+        const hasMemory = messages.some((message) => message.role === "system" && message.name === "memory");
         return hasMemory ? "Memory injected." : "No memory.";
       },
       { memory, sessionId: "s3" }
@@ -279,10 +277,7 @@ describe("withMemory middleware", () => {
     const all = await memory.getBySession("s3");
     expect(
       all.some(
-        (item) =>
-          item.kind === "entry" &&
-          item.role === "assistant" &&
-          item.content === "Memory injected."
+        (item) => item.kind === "entry" && item.role === "assistant" && item.content === "Memory injected."
       )
     ).toBe(true);
   });
@@ -316,10 +311,11 @@ describe("withMemory middleware", () => {
       }
     });
 
-    const wrapped = withMemory(
-      async () => "Response",
-      { memory, sessionId: "s-autosumm", autoSummarise: true }
-    );
+    const wrapped = withMemory(async () => "Response", {
+      memory,
+      sessionId: "s-autosumm",
+      autoSummarise: true
+    });
 
     for (let i = 0; i < 4; i++) {
       await wrapped([{ role: "user", content: `Turn ${i}` }]);

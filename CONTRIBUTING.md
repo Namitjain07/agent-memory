@@ -1,104 +1,132 @@
-# Contributing to Agent Memory
+# Contributing
 
-Thanks for your interest in improving Agent Memory!
+Thanks for your interest in improving `agent-memory`! This document covers how to set up the project locally, run tests, and submit a pull request.
 
-## Before You Start
+## Development setup
 
-1. Search existing [issues](https://github.com/Namitjain07/agent-memory/issues) and [pull requests](https://github.com/Namitjain07/agent-memory/pulls) to avoid duplicate work.
-2. For significant changes, open an issue first to discuss scope and design.
-3. Keep pull requests focused — one logical change per PR.
+### Prerequisites
 
----
+- Node.js 18.20+ or 20.x or 22.x
+- npm 9+
 
-## Development Setup
+### First-time setup
 
 ```bash
 git clone https://github.com/Namitjain07/agent-memory.git
 cd agent-memory
-npm install        # installs all workspace packages
-npm test           # run all unit tests (vitest)
-npm run build      # build all packages (tsup)
+npm install --legacy-peer-deps
+npm test
+npm run build
 ```
 
-### Integration Tests (requires an API key)
+### Why `--legacy-peer-deps`?
+
+This monorepo uses a mix of stable and beta versions across packages (e.g. the `agent-memory` core is stable 0.x, while `agent-memory-cli` is 0.5.0-beta). When the core upgrades its peer dep range, npm's strict resolver sometimes rejects transitive installs. `--legacy-peer-deps` opts back into npm v6 behavior, which is permissive enough to handle our version skew. Consumers using plain `npm install` are not affected.
+
+## Project layout
+
+```
+agent-memory/
+├── packages/
+│   ├── agent-memory/          ← core engine, zero runtime deps
+│   ├── agent-memory-sqlite/   ← SQLite adapter
+│   ├── agent-memory-postgres/ ← pgvector adapter
+│   ├── agent-memory-react/    ← React hook
+│   ├── agent-memory-vercel/   ← Vercel AI SDK adapter
+│   └── agent-memory-cli/      ← CLI binary
+├── examples/                  ← runnable TS demos
+├── benchmarks/                ← recall benchmark suite
+└── docs/                      ← architecture + comparison docs
+```
+
+## Workflow
+
+### 1. Pick an issue
+
+Browse [open issues](https://github.com/Namitjain07/agent-memory/issues) and pick one tagged `good first issue` or `help wanted`. Comment on the issue to claim it before starting work.
+
+### 2. Branch off `main`
 
 ```bash
-# Set your NVIDIA NIM key (or any OpenAI-compatible key) as an env var:
-$env:NVIDIA_API_KEY = "your-key-here"          # PowerShell
-export NVIDIA_API_KEY="your-key-here"          # bash/zsh
-
-node packages/agent-memory/tests/integration-nvidia.mjs
+git checkout main
+git pull
+git checkout -b feat/<short-description>
+# or: fix/<short-description>, docs/<short-description>
 ```
 
----
+### 3. Make your change
 
-## Project Structure
+- Follow the existing code style (Prettier + ESLint are configured at the repo root).
+- Add tests for any new functionality. Bug fixes should add a regression test.
+- Update the relevant package's `CHANGELOG.md` and add a changeset (see below).
 
-```
-packages/
-  agent-memory/           → core engine, in-memory adapter, withMemory middleware
-    src/
-      core/               → AgentMemory class
-      adapters/           → InMemoryAdapter
-      middleware/         → withMemory
-      types/              → TypeScript interfaces
-      utils/              → math, format, ids, time, tokens, embed-helpers
-    tests/                → vitest unit tests + integration scripts
-  agent-memory-sqlite/    → SQLiteAdapter
-  agent-memory-postgres/  → PostgresAdapter
-  agent-memory-react/     → useMemory React hook
+### 4. Add a changeset
+
+This repo uses [Changesets](https://github.com/changesets/changesets) for release notes.
+
+```bash
+npx changeset
 ```
 
----
+This will prompt you for:
 
-## Contribution Standards
+- **Which packages changed?** (select from the list)
+- **What kind of change?** (major / minor / patch)
+- **One-line summary** (will appear in CHANGELOG.md)
 
-- **TypeScript** — follow existing code style; avoid `any` and unsafe casts.
-- **Strong typing** — preserve and expand types wherever possible.
-- **Tests** — add or update tests for all behaviour changes.
-- **Docs** — update relevant README and CHANGELOG when public APIs change.
-- **Adapter compatibility** — all adapters must implement the `MemoryAdapter` interface.
+It writes a Markdown file under `.changeset/` describing your change. Commit this file with your PR.
 
----
+### 5. Run the full check suite locally
 
-## Commit Format
-
-We use [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat: add filter callback to RecallOptions
-fix: recall no longer throws when no embed fn is configured
-docs: add NVIDIA NIM example to README
-chore: bump all packages to 0.2.0
-test: add stats() and clear() test coverage
-refactor: replace index-based InMemoryAdapter with stable Map
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
 ```
 
----
+All four must pass before you open a PR.
 
-## Pull Request Checklist
+### 6. Open a pull request
 
-- [ ] `npm test` passes locally
-- [ ] `npm run build` succeeds
-- [ ] New behaviour is covered by tests
-- [ ] Docs / README updated if public API changed
-- [ ] CHANGELOG entry added under the next version
-- [ ] Backward compatibility considered (note breaking changes explicitly)
+```bash
+git push -u origin feat/<short-description>
+```
 
----
+Then open a PR against `main`. Fill in the PR template. The PR will trigger the CI matrix (lint, typecheck, test, build across Node 18/20/22).
 
-## Reporting Bugs
+## Coding conventions
 
-Use the bug report issue template and include:
+- **TypeScript**: strict mode + `exactOptionalPropertyTypes`. No `any` in public APIs.
+- **Naming**: `camelCase` for functions/variables, `PascalCase` for classes/types, `UPPER_SNAKE_CASE` for env-var style constants.
+- **No runtime deps in core.** If you need a new dependency in `packages/agent-memory/src/`, justify it in the PR description and consider an opt-in pattern instead.
+- **Prettier**: trailing comma off, single quotes, 100-char line width. Configured in `.prettierrc.json`.
+- **Comments**: explain _why_, not _what_. The code should speak for itself.
 
-- OS, Node.js version, npm version
-- Package name + version
-- Minimal reproduction
-- Expected vs actual behaviour
+## Testing conventions
 
----
+- Use `vitest`. Tests live next to source as `*.test.ts`.
+- One `describe` per module, one `it` per behavior.
+- Prefer asserting on observable behavior, not internal state.
+- For adapters, include both happy path and at least one error path.
 
-## Security Issues
+## Releasing
 
-**Do not open public issues for vulnerabilities.**
-Follow [SECURITY.md](./SECURITY.md).
+Maintainers only:
+
+```bash
+npx changeset version   # bumps versions, updates CHANGELOG.md
+npx changeset publish   # builds + publishes to npm
+git push --follow-tags
+```
+
+## Communication
+
+- **Bug reports**: GitHub issues with the `bug` template.
+- **Feature requests**: GitHub issues with the `feature` template.
+- **Security issues**: see `SECURITY.md` — please do not file public issues for security bugs.
+- **General questions**: GitHub Discussions (coming soon) or open an issue with the `question` label.
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License. See `LICENSE` for details.

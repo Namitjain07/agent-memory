@@ -31,9 +31,7 @@ export function formatRecallResults(
   const lines = results.map((result, index) => {
     const item = result.item;
     const content =
-      item.kind === "fact"
-        ? `${item.key}=${item.value}`
-        : truncate(item.content, maxContentLength);
+      item.kind === "fact" ? `${item.key}=${item.value}` : truncate(item.content, maxContentLength);
     return `${index + 1}. [${itemLabel(item)} | score=${result.score.toFixed(3)}] ${content}`;
   });
 

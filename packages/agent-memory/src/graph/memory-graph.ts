@@ -64,12 +64,12 @@ import {
 
 const DEFAULT_OPTIONS: Required<MemoryGraphOptions> = {
   edgesPerNode: 6,
-  similarityThreshold: 0.60,
-  activationDecay: 0.50,
+  similarityThreshold: 0.6,
+  activationDecay: 0.5,
   maxHops: 3,
   pageRankDamping: 0.85,
   edgeTemporalDecay: 0.005,
-  scoreWeights: { similarity: 0.40, activation: 0.25, pageRank: 0.20, recency: 0.15 }
+  scoreWeights: { similarity: 0.4, activation: 0.25, pageRank: 0.2, recency: 0.15 }
 };
 
 /** @beta */
@@ -136,10 +136,7 @@ export class MemoryGraph {
    * 4. Blend: score = w1·sim + w2·activation + w3·pageRank + w4·recency
    * 5. Optional cluster-aware deduplication
    */
-  async graphRecall(
-    query: string,
-    options: GraphRecallOptions = {}
-  ): Promise<GraphRecallResult[]> {
+  async graphRecall(query: string, options: GraphRecallOptions = {}): Promise<GraphRecallResult[]> {
     const sessionId = options.sessionId ?? "default";
     const topK = options.topK ?? 5;
     const useActivation = options.useSpreadingActivation ?? true;
@@ -155,7 +152,7 @@ export class MemoryGraph {
     // 1. Standard recall for seeds + similarity scores
     const seedResults = await this.memory.recall(query, {
       sessionId,
-      topK: Math.max(topK * 3, 15)  // over-fetch for re-ranking
+      topK: Math.max(topK * 3, 15) // over-fetch for re-ranking
     });
 
     if (seedResults.length === 0) return [];
@@ -191,10 +188,7 @@ export class MemoryGraph {
       const recScore = recencyVal;
 
       const blended =
-        w.similarity * simScore +
-        w.activation * activScore +
-        w.pageRank * pprScore +
-        w.recency * recScore;
+        w.similarity * simScore + w.activation * activScore + w.pageRank * pprScore + w.recency * recScore;
 
       candidates.push({
         item,
@@ -221,10 +215,7 @@ export class MemoryGraph {
         const recScore = recencyScore(item.timestamp);
 
         const blended =
-          w.similarity * 0 +
-          w.activation * activation +
-          w.pageRank * pprScore +
-          w.recency * recScore;
+          w.similarity * 0 + w.activation * activation + w.pageRank * pprScore + w.recency * recScore;
 
         candidates.push({
           item,
@@ -295,7 +286,10 @@ export class MemoryGraph {
       for (const id of memberIds) {
         const node = graph.get(id);
         const pr = node?.pageRank ?? 0;
-        if (pr > bestPR) { bestPR = pr; hubId = id; }
+        if (pr > bestPR) {
+          bestPR = pr;
+          hubId = id;
+        }
       }
 
       result.push({
@@ -374,13 +368,10 @@ export class MemoryGraph {
     }
     edgeCount = Math.floor(edgeCount / 2); // undirected
 
-    const density = nodeCount > 1
-      ? edgeCount / (nodeCount * (nodeCount - 1) / 2)
-      : 0;
+    const density = nodeCount > 1 ? edgeCount / ((nodeCount * (nodeCount - 1)) / 2) : 0;
 
-    const avgDegree = nodeCount > 0
-      ? (Array.from(graph.values()).reduce((sum, n) => sum + n.edges.size, 0)) / nodeCount
-      : 0;
+    const avgDegree =
+      nodeCount > 0 ? Array.from(graph.values()).reduce((sum, n) => sum + n.edges.size, 0) / nodeCount : 0;
 
     const clusterCount = new Set(assignment.values()).size;
 
@@ -391,11 +382,7 @@ export class MemoryGraph {
    * @beta Summarise a single memory cluster using a provided summarise function.
    * Useful for cluster-aware compression instead of chronological summarisation.
    */
-  async summariseCluster(
-    sessionId: string,
-    clusterId: number,
-    summariseFn: SummariseFn
-  ): Promise<string> {
+  async summariseCluster(sessionId: string, clusterId: number, summariseFn: SummariseFn): Promise<string> {
     const allClusters = await this.clusters(sessionId);
     const cluster = allClusters.find((c) => c.id === clusterId);
     if (!cluster || cluster.memberIds.length === 0) {
@@ -404,8 +391,9 @@ export class MemoryGraph {
 
     const allItems = await this.memory.getBySession(sessionId);
     const entries = allItems
-      .filter((item): item is MemoryItem & { kind: "entry" } =>
-        item.kind === "entry" && cluster.memberIds.includes(item.id)
+      .filter(
+        (item): item is MemoryItem & { kind: "entry" } =>
+          item.kind === "entry" && cluster.memberIds.includes(item.id)
       )
       .sort((a, b) => a.timestamp - b.timestamp);
 
@@ -509,7 +497,7 @@ export class MemoryGraph {
 
     const candidates: { id: string; similarity: number }[] = [];
 
-    for (const [existingId, existingNode] of graph) {
+    for (const [existingId, _existingNode] of graph) {
       if (existingId === item.id) continue;
       const existingEmbed = this.embedCache.get(existingId);
       if (!existingEmbed) continue;
@@ -536,12 +524,7 @@ export class MemoryGraph {
     }
   }
 
-  private temporalScore(
-    item: MemoryItem,
-    graph: AdjacencyList,
-    neighbourId: string,
-    now: number
-  ): number {
+  private temporalScore(item: MemoryItem, graph: AdjacencyList, neighbourId: string, now: number): number {
     const neighbourNode = graph.get(neighbourId);
     if (!neighbourNode) return 0;
 

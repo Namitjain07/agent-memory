@@ -16,7 +16,7 @@ Closes #
 
 ## What changed
 
-- 
+-
 
 ## Testing
 

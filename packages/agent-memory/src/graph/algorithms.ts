@@ -9,7 +9,7 @@
  *   - Community detection: threshold-based connected components (simplified Louvain)
  */
 
-import type { AdjacencyList, GraphNode } from "./types";
+import type { AdjacencyList } from "./types";
 
 // ─── PageRank ─────────────────────────────────────────────────────────────────
 
@@ -127,10 +127,7 @@ export function personalizedPageRank(
 
       const fromRank = rank.get(fromId) ?? 0;
       for (const [toId, edge] of node.edges) {
-        newRank.set(
-          toId,
-          (newRank.get(toId) ?? 0) + damping * fromRank * (edge.weight / totalWeight)
-        );
+        newRank.set(toId, (newRank.get(toId) ?? 0) + damping * fromRank * (edge.weight / totalWeight));
       }
     }
 
@@ -188,10 +185,7 @@ export function spreadActivation(
         if (propagated < 1e-9) continue; // prune negligible energy
 
         activation.set(neighbourId, (activation.get(neighbourId) ?? 0) + propagated);
-        nextFrontier.set(
-          neighbourId,
-          (nextFrontier.get(neighbourId) ?? 0) + propagated
-        );
+        nextFrontier.set(neighbourId, (nextFrontier.get(neighbourId) ?? 0) + propagated);
       }
     }
 
@@ -224,10 +218,7 @@ export function spreadActivation(
  * @param threshold - Minimum edge weight to include in cluster graph (default: 0.65)
  * @returns         - Map of nodeId → clusterId
  */
-export function detectClusters(
-  graph: AdjacencyList,
-  threshold = 0.65
-): Map<string, number> {
+export function detectClusters(graph: AdjacencyList, threshold = 0.65): Map<string, number> {
   const assignment = new Map<string, number>();
   let clusterId = 0;
 
@@ -298,7 +289,9 @@ export function findBridgeNodes(
 
 export function cosineSimilarityGraph(a: number[], b: number[]): number {
   if (a.length === 0 || b.length === 0 || a.length !== b.length) return 0;
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i]! * b[i]!;
     na += a[i]! * a[i]!;

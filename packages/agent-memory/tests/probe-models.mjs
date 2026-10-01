@@ -11,15 +11,20 @@ if (!API_KEY) {
 }
 
 fetch("https://integrate.api.nvidia.com/v1/models", {
-  headers: { "Authorization": `Bearer ${API_KEY}` }
+  headers: { Authorization: `Bearer ${API_KEY}` }
 })
   .then((r) => r.json())
   .then((j) => {
     const models = j.data || [];
-    const embeddingModels = models.filter((m) =>
-      m.id.toLowerCase().includes("embed")
-    );
+    const embeddingModels = models.filter((m) => m.id.toLowerCase().includes("embed"));
     console.log("Total models:", models.length);
-    console.log("Embedding models:", JSON.stringify(embeddingModels.map((m) => m.id), null, 2));
+    console.log(
+      "Embedding models:",
+      JSON.stringify(
+        embeddingModels.map((m) => m.id),
+        null,
+        2
+      )
+    );
   })
   .catch((e) => console.error(e));

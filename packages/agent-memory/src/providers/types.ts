@@ -1,5 +1,7 @@
 import type { EmbedBatchFn, EmbedFn, SummariseFn } from "../types/config";
 import type { MemoryEntry } from "../types/memory";
+import { fetchJSON as robustFetchJSON } from "../utils/http";
+import type { RequestOptions } from "../utils/http";
 
 /**
  * A MemoryProvider bundles an embedding function pair and an optional
@@ -29,6 +31,11 @@ export interface MemoryProvider {
    * Undefined for providers that don't support text generation (e.g. Voyage).
    */
   summarise?: SummariseFn;
+  /**
+   * Optional default per-request options applied to all provider calls
+   * (timeout, retry policy, abort signal).
+   */
+  defaultRequestOptions?: RequestOptions;
 }
 
 // ─── Shared internal helpers ─────────────────────────────────────────────────
@@ -39,30 +46,23 @@ const SUMMARY_SYSTEM_PROMPT =
   "Be specific. Return only the summary, no preamble or explanation.";
 
 export function buildConversationText(entries: MemoryEntry[]): string {
-  return entries
-    .map((e) => `${e.role.toUpperCase()}: ${e.content.trim()}`)
-    .join("\n");
+  return entries.map((e) => `${e.role.toUpperCase()}: ${e.content.trim()}`).join("\n");
 }
 
 export function buildSummaryPrompt(entries: MemoryEntry[]): string {
   return `${SUMMARY_SYSTEM_PROMPT}\n\n---\n${buildConversationText(entries)}\n---\n\nSummary:`;
 }
 
+/**
+ * @deprecated Prefer `robustFetchJSON` from `utils/http` for new code.
+ * This thin wrapper is kept for backwards compatibility and applies the
+ * provider's default retry/timeout/signal options automatically.
+ */
 export async function fetchJSON<T>(
   url: string,
   body: unknown,
-  headers: Record<string, string>
+  headers: Record<string, string> = {},
+  options: RequestOptions = {}
 ): Promise<T> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify(body)
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "(no body)");
-    throw new Error(`[agent-memory] Provider request failed: ${response.status} ${text}`);
-  }
-
-  return response.json() as Promise<T>;
+  return robustFetchJSON(url, body, headers, options);
 }

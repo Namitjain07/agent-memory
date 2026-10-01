@@ -97,11 +97,33 @@ async function main() {
   console.log("\nTest 3: remember → recall round-trip...");
   const memory = new AgentMemory({ embedding: { embedBatchFn: batchEmbedFn } });
 
-  await memory.remember({ kind: "fact", sessionId: "demo", key: "language", value: "TypeScript", importance: 1 });
-  await memory.remember({ kind: "fact", sessionId: "demo", key: "framework", value: "React", importance: 0.8 });
+  await memory.remember({
+    kind: "fact",
+    sessionId: "demo",
+    key: "language",
+    value: "TypeScript",
+    importance: 1
+  });
+  await memory.remember({
+    kind: "fact",
+    sessionId: "demo",
+    key: "framework",
+    value: "React",
+    importance: 0.8
+  });
   await memory.remember({ kind: "fact", sessionId: "demo", key: "hobby", value: "Hiking", importance: 0.5 });
-  await memory.remember({ role: "user", content: "I have been building AI agents for 2 years", sessionId: "demo", importance: 0.7 });
-  await memory.remember({ role: "assistant", content: "AI agent development requires a good memory system.", sessionId: "demo", importance: 0.6 });
+  await memory.remember({
+    role: "user",
+    content: "I have been building AI agents for 2 years",
+    sessionId: "demo",
+    importance: 0.7
+  });
+  await memory.remember({
+    role: "assistant",
+    content: "AI agent development requires a good memory system.",
+    sessionId: "demo",
+    importance: 0.6
+  });
 
   const s = await memory.stats("demo");
   console.log(`  Stored: ${s.total} items — entries=${s.byKind.entry}, facts=${s.byKind.fact}`);
@@ -113,14 +135,15 @@ async function main() {
 
   console.log(`  Recalled ${recalled.length} items:`);
   for (const r of recalled) {
-    const label = r.item.kind === "fact"
-      ? `[fact] ${r.item.key}=${r.item.value}`
-      : `[entry] ${r.item.content.slice(0, 60)}`;
+    const label =
+      r.item.kind === "fact"
+        ? `[fact] ${r.item.key}=${r.item.value}`
+        : `[entry] ${r.item.content.slice(0, 60)}`;
     console.log(`    score=${r.score.toFixed(3)} sim=${r.similarity.toFixed(3)} | ${label}`);
   }
 
-  const topIsRelevant = recalled[0]?.item.kind === "fact" &&
-    ["language", "framework"].includes(recalled[0].item.key);
+  const topIsRelevant =
+    recalled[0]?.item.kind === "fact" && ["language", "framework"].includes(recalled[0].item.key);
   console.log(`  ✅ Top result is relevant: ${topIsRelevant}`);
 
   // ─── Test 4: filter callback
@@ -129,7 +152,9 @@ async function main() {
     sessionId: "demo",
     filter: (item) => item.kind === "fact"
   });
-  console.log(`✅ ${factsOnly.length} facts, all kind=fact: ${factsOnly.every(r => r.item.kind === "fact")}`);
+  console.log(
+    `✅ ${factsOnly.length} facts, all kind=fact: ${factsOnly.every((r) => r.item.kind === "fact")}`
+  );
 
   // ─── Test 5: inject into messages
   process.stdout.write("Test 5: memory injection... ");
@@ -144,16 +169,33 @@ async function main() {
   // ─── Test 6: withMemory + real LLM
   console.log("\nTest 6: withMemory + real LLM call...");
   const agentMemory = new AgentMemory({ embedding: { embedBatchFn: batchEmbedFn } });
-  await agentMemory.remember({ kind: "fact", sessionId: "llm-test", key: "name", value: "Alex", importance: 1 });
-  await agentMemory.remember({ kind: "fact", sessionId: "llm-test", key: "language", value: "TypeScript", importance: 0.9 });
+  await agentMemory.remember({
+    kind: "fact",
+    sessionId: "llm-test",
+    key: "name",
+    value: "Alex",
+    importance: 1
+  });
+  await agentMemory.remember({
+    kind: "fact",
+    sessionId: "llm-test",
+    key: "language",
+    value: "TypeScript",
+    importance: 0.9
+  });
 
-  const runAgent = withMemory(
-    async (msgs) => chatCompletion(msgs),
-    { memory: agentMemory, sessionId: "llm-test", autoStoreInput: true, autoStoreOutput: true }
-  );
+  const runAgent = withMemory(async (msgs) => chatCompletion(msgs), {
+    memory: agentMemory,
+    sessionId: "llm-test",
+    autoStoreInput: true,
+    autoStoreOutput: true
+  });
 
   const llmResponse = await runAgent([
-    { role: "system", content: "You are a helpful assistant. Greet the user by name and mention their preferred language." },
+    {
+      role: "system",
+      content: "You are a helpful assistant. Greet the user by name and mention their preferred language."
+    },
     { role: "user", content: "Hello! Can you remind me what I told you about myself?" }
   ]);
 

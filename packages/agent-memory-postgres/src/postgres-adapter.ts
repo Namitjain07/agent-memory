@@ -4,7 +4,8 @@ import type {
   MemoryKind,
   MemorySearchCandidate,
   MemorySearchOptions,
-  MemoryUpdate
+  MemoryUpdate,
+  MemoryTier
 } from "@namitjain.india/agent-memory";
 
 type QueryResultRow = Record<string, unknown>;
@@ -20,6 +21,9 @@ type MemoryRow = {
   id: string;
   kind: MemoryKind;
   session_id: string;
+  tier: string | null;
+  user_id: string | null;
+  agent_id: string | null;
   timestamp: number;
   importance: number;
   role: string | null;
@@ -39,6 +43,13 @@ export interface PostgresAdapterOptions {
   connectionString?: string;
   tableName?: string;
   autoCreateExtension?: boolean;
+  /**
+   * Pass an existing Pool to use it (alternative to `client`).
+   * Both `client` and `pool` are accepted — the first non-null one wins.
+   */
+  pool?: PgPoolLike;
+  /** Connection pool settings (only used if a connection string is given). */
+  poolConfig?: { max?: number; idleTimeoutMillis?: number; connectionTimeoutMillis?: number };
 }
 
 export class PostgresAdapter implements MemoryAdapter {
@@ -52,6 +63,8 @@ export class PostgresAdapter implements MemoryAdapter {
 
   private readonly autoCreateExtension: boolean;
 
+  private readonly poolConfig: PostgresAdapterOptions["poolConfig"];
+
   /**
    * initPromise is set synchronously before the first await to prevent
    * concurrent initialize() calls racing each other.
@@ -59,10 +72,11 @@ export class PostgresAdapter implements MemoryAdapter {
   private initPromise: Promise<void> | null = null;
 
   constructor(options: PostgresAdapterOptions = {}) {
-    this.client = options.client ?? null;
+    this.client = options.client ?? options.pool ?? null;
     this.connectionString = options.connectionString;
     this.tableName = options.tableName ?? "memory_items";
     this.autoCreateExtension = options.autoCreateExtension ?? true;
+    this.poolConfig = options.poolConfig;
   }
 
   async add(item: MemoryItem): Promise<void> {
@@ -70,16 +84,20 @@ export class PostgresAdapter implements MemoryAdapter {
     const client = this.client!;
     await client.query(
       `INSERT INTO ${this.tableName} (
-        id, kind, session_id, timestamp, importance, role, content, key_name, value_text,
-        embedding, metadata, from_timestamp, to_timestamp, replaced_entry_ids
+        id, kind, session_id, tier, user_id, agent_id, timestamp, importance,
+        role, content, key_name, value_text, embedding, metadata,
+        from_timestamp, to_timestamp, replaced_entry_ids
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10::vector, $11::jsonb, $12, $13, $14::text[]
+        $10, $11::jsonb, $12, $13, $14, $15, $16, $17::text[]
       )`,
       [
         item.id,
         item.kind,
         item.sessionId,
+        item.tier ?? null,
+        item.userId ?? null,
+        item.agentId ?? null,
         item.timestamp,
         item.importance,
         item.kind === "entry" ? item.role : null,
@@ -95,33 +113,76 @@ export class PostgresAdapter implements MemoryAdapter {
     );
   }
 
-  async search(
-    queryVector: number[],
-    options: MemorySearchOptions
-  ): Promise<MemorySearchCandidate[]> {
+  async search(queryVector: number[], options: MemorySearchOptions): Promise<MemorySearchCandidate[]> {
     await this.ensureInitialized();
     const client = this.client!;
     const limit = options.limit ?? 20;
-    const result = await client.query(
-      `SELECT *,
-        CASE
-          WHEN embedding IS NULL THEN 0
-          ELSE 1 - (embedding <=> $1::vector)
-        END AS similarity
-      FROM ${this.tableName}
-      WHERE session_id = $2
-        AND ($3::text[] IS NULL OR kind = ANY($3))
-      ORDER BY similarity DESC, timestamp DESC
-      LIMIT $4`,
-      [toVectorLiteral(queryVector), options.sessionId, options.kinds ?? null, limit]
-    );
 
+    const conditions: string[] = ["session_id = $1"];
+    const params: unknown[] = [options.sessionId];
+    let nextParam = 2;
+
+    if (options.kinds && options.kinds.length > 0) {
+      conditions.push(`kind = ANY($${nextParam}::text[])`);
+      params.push(options.kinds);
+      nextParam += 1;
+    }
+    if (options.tiers && options.tiers.length > 0) {
+      // Items with NULL tier are treated as "session" tier for backward compatibility
+      conditions.push(
+        `(tier = ANY($${nextParam}::text[]) OR (tier IS NULL AND 'session' = ANY($${nextParam}::text[])))`
+      );
+      params.push(options.tiers);
+      nextParam += 1;
+    }
+    if (options.userId) {
+      conditions.push(`user_id = $${nextParam}`);
+      params.push(options.userId);
+      nextParam += 1;
+    }
+    if (options.agentId) {
+      conditions.push(`agent_id = $${nextParam}`);
+      params.push(options.agentId);
+      nextParam += 1;
+    }
+
+    const whereClause = conditions.join(" AND ");
+    const hasVector = queryVector.length > 0;
+
+    if (hasVector) {
+      // Vector path: native pgvector cosine distance, with similarity in [0, 1].
+      const vectorParam = nextParam;
+      const limitParam = nextParam + 1;
+      const sql = `
+        SELECT *,
+          CASE
+            WHEN embedding IS NULL THEN 0
+            ELSE 1 - (embedding <=> $${vectorParam}::vector)
+          END AS similarity
+        FROM ${this.tableName}
+        WHERE ${whereClause}
+        ORDER BY (embedding IS NOT NULL) DESC, embedding <=> $${vectorParam}::vector ASC, timestamp DESC
+        LIMIT $${limitParam}
+      `;
+      const result = await client.query(sql, [...params, toVectorLiteral(queryVector), limit]);
+      return result.rows.map((row) => {
+        const memoryRow = row as unknown as MemoryRow;
+        return {
+          item: this.fromRow(memoryRow),
+          similarity: clamp(memoryRow.similarity ?? 0, 0, 1)
+        };
+      });
+    }
+
+    // No-vector fallback: order by timestamp, similarity = 0.
+    const limitParam = nextParam;
+    const result = await client.query(
+      `SELECT *, 0 AS similarity FROM ${this.tableName} WHERE ${whereClause} ORDER BY timestamp DESC LIMIT $${limitParam}`,
+      [...params, limit]
+    );
     return result.rows.map((row) => {
       const memoryRow = row as unknown as MemoryRow;
-      return {
-        item: this.fromRow(memoryRow),
-        similarity: clamp(memoryRow.similarity ?? 0, 0, 1)
-      };
+      return { item: this.fromRow(memoryRow), similarity: 0 };
     });
   }
 
@@ -137,9 +198,7 @@ export class PostgresAdapter implements MemoryAdapter {
     let index = 1;
 
     const push = (column: string, value: unknown, cast?: string): void => {
-      updates.push(
-        `${column} = $${index}${cast ? `::${cast}` : ""}`
-      );
+      updates.push(`${column} = $${index}${cast ? `::${cast}` : ""}`);
       values.push(value);
       index += 1;
     };
@@ -156,8 +215,10 @@ export class PostgresAdapter implements MemoryAdapter {
     if (data.timestamp !== undefined) push("timestamp", data.timestamp);
     if (data.fromTimestamp !== undefined) push("from_timestamp", data.fromTimestamp);
     if (data.toTimestamp !== undefined) push("to_timestamp", data.toTimestamp);
-    if (data.replacedEntryIds !== undefined)
-      push("replaced_entry_ids", data.replacedEntryIds, "text[]");
+    if (data.replacedEntryIds !== undefined) push("replaced_entry_ids", data.replacedEntryIds, "text[]");
+    if (data.tier !== undefined) push("tier", data.tier);
+    if (data.userId !== undefined) push("user_id", data.userId);
+    if (data.agentId !== undefined) push("agent_id", data.agentId);
 
     if (updates.length === 0) {
       return;
@@ -184,10 +245,7 @@ export class PostgresAdapter implements MemoryAdapter {
    */
   async clear(sessionId: string): Promise<void> {
     await this.ensureInitialized();
-    await this.client!.query(
-      `DELETE FROM ${this.tableName} WHERE session_id = $1`,
-      [sessionId]
-    );
+    await this.client!.query(`DELETE FROM ${this.tableName} WHERE session_id = $1`, [sessionId]);
   }
 
   async close(): Promise<void> {
@@ -207,11 +265,11 @@ export class PostgresAdapter implements MemoryAdapter {
   private async initialize(): Promise<void> {
     if (!this.client) {
       const pgModule = (await loadOptionalModule("pg")) as {
-        Pool: new (config?: { connectionString?: string }) => PgPoolLike;
+        Pool: new (config?: Record<string, unknown>) => PgPoolLike;
       };
-      const config = this.connectionString
-        ? { connectionString: this.connectionString }
-        : undefined;
+      const config: Record<string, unknown> = this.connectionString
+        ? { connectionString: this.connectionString, ...(this.poolConfig ?? {}) }
+        : { ...(this.poolConfig ?? {}) };
       this.pool = new pgModule.Pool(config);
       this.client = this.pool;
     }
@@ -225,6 +283,9 @@ export class PostgresAdapter implements MemoryAdapter {
         id TEXT PRIMARY KEY,
         kind TEXT NOT NULL,
         session_id TEXT NOT NULL,
+        tier TEXT,
+        user_id TEXT,
+        agent_id TEXT,
         timestamp BIGINT NOT NULL,
         importance REAL NOT NULL DEFAULT 0.5,
         role TEXT,
@@ -239,6 +300,12 @@ export class PostgresAdapter implements MemoryAdapter {
       );
       CREATE INDEX IF NOT EXISTS idx_${this.tableName}_session
       ON ${this.tableName}(session_id, timestamp);
+      CREATE INDEX IF NOT EXISTS idx_${this.tableName}_tier
+      ON ${this.tableName}(tier);
+      CREATE INDEX IF NOT EXISTS idx_${this.tableName}_user
+      ON ${this.tableName}(user_id);
+      CREATE INDEX IF NOT EXISTS idx_${this.tableName}_agent
+      ON ${this.tableName}(agent_id);
       CREATE INDEX IF NOT EXISTS idx_${this.tableName}_embedding_hnsw
       ON ${this.tableName} USING hnsw (embedding vector_cosine_ops)
       WHERE embedding IS NOT NULL;
@@ -260,10 +327,16 @@ export class PostgresAdapter implements MemoryAdapter {
       importance: Number(row.importance)
     };
 
+    const tierFields: { tier?: MemoryTier; userId?: string; agentId?: string } = {};
+    if (row.tier) tierFields.tier = row.tier as MemoryTier;
+    if (row.user_id) tierFields.userId = row.user_id;
+    if (row.agent_id) tierFields.agentId = row.agent_id;
+
     if (row.kind === "entry") {
       return {
         ...base,
         ...optionalFields,
+        ...tierFields,
         kind: "entry",
         role: (row.role ?? "user") as "system" | "user" | "assistant" | "tool",
         content: row.content ?? ""
@@ -274,6 +347,7 @@ export class PostgresAdapter implements MemoryAdapter {
       return {
         ...base,
         ...optionalFields,
+        ...tierFields,
         kind: "fact",
         key: row.key_name ?? "",
         value: row.value_text ?? "",
@@ -284,6 +358,7 @@ export class PostgresAdapter implements MemoryAdapter {
     return {
       ...base,
       ...optionalFields,
+      ...tierFields,
       kind: "summary",
       content: row.content ?? "",
       fromTimestamp: Number(row.from_timestamp ?? row.timestamp),
@@ -319,9 +394,8 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function loadOptionalModule(moduleName: string): Promise<unknown> {
-  const dynamicImport = new Function(
-    "moduleName",
-    "return import(moduleName);"
-  ) as (moduleName: string) => Promise<unknown>;
+  const dynamicImport = new Function("moduleName", "return import(moduleName);") as (
+    moduleName: string
+  ) => Promise<unknown>;
   return dynamicImport(moduleName);
 }

@@ -1,26 +1,38 @@
 {
   "name": "@namitjain.india/agent-memory-react",
-  "version": "0.3.0",
-  "description": "React hook utilities for agent-memory",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Namitjain07/agent-memory.git"
-  },
-  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
-  "bugs": {
-    "url": "https://github.com/Namitjain07/agent-memory/issues"
-  },
+  "version": "0.4.0",
+  "description": "React hook for agent-memory. useMemory() for LLM chat UIs with loading/error state, recall, remember, summarise, and session management. Works with any agent-memory storage backend.",
   "keywords": [
+    "agent-memory",
     "ai",
-    "memory",
-    "agent",
-    "react",
+    "ai-chat",
+    "ai-memory",
+    "chat-ui",
+    "chatbot",
     "hook",
+    "hooks",
     "llm",
-    "context"
+    "llm-agent",
+    "llm-chat",
+    "memory",
+    "nextjs",
+    "react",
+    "react-hook",
+    "react-hooks",
+    "reactjs",
+    "semantic-search",
+    "typescript",
+    "use-chat",
+    "vercel-ai",
+    "vercel-ai-sdk"
   ],
   "license": "MIT",
+  "author": {
+    "name": "Namit Jain",
+    "url": "https://github.com/Namitjain07"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,16 +44,49 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git",
+    "directory": "packages/agent-memory-react"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Namitjain07"
+  },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean --external react"
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean --external react",
+    "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
-    "@namitjain.india/agent-memory": ">=0.3.0",
+    "@namitjain.india/agent-memory": ">=0.5.0",
     "react": "^18.0.0 || ^19.0.0"
   },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

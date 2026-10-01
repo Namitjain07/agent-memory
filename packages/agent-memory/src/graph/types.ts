@@ -5,6 +5,8 @@
  * on top of the standard memory store.
  */
 
+import type { MemoryItem } from "../types/memory";
+
 // ─── Graph edge ───────────────────────────────────────────────────────────────
 
 export interface EdgeWeight {
@@ -104,7 +106,7 @@ export interface GraphRecallOptions {
 }
 
 export interface GraphRecallResult {
-  item: import("../types/memory").MemoryItem;
+  item: MemoryItem;
   /** Blended graph score (0–1). */
   score: number;
   /** Raw vector similarity component. */
@@ -139,7 +141,7 @@ export interface GraphHubResult {
   pageRank: number;
   degree: number;
   cluster: number;
-  item: import("../types/memory").MemoryItem | null;
+  item: MemoryItem | null;
 }
 
 export interface GraphBridgeResult {
@@ -148,7 +150,7 @@ export interface GraphBridgeResult {
   connectsClusters: number[];
   /** Total cross-cluster edge weight. */
   bridgeScore: number;
-  item: import("../types/memory").MemoryItem | null;
+  item: MemoryItem | null;
 }
 
 export interface GraphStats {
