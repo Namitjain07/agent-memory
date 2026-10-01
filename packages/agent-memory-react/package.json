@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-react",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "React hook for agent-memory. useMemory() for LLM chat UIs with loading/error state, recall, remember, summarise, and session management. Works with any agent-memory storage backend.",
   "keywords": [
     "agent-memory",

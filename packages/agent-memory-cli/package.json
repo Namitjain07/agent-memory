@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-cli",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "CLI inspector for agent-memory. List, search, show, export, and inspect any agent-memory SQLite store from the terminal. Output as table, JSON, or TSV. Read-only by design.",
   "keywords": [
     "agent-memory",

@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-vercel",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "Drop-in Vercel AI SDK integration for agent-memory. withAIMemory() auto-injects long-term memory into every streamText / generateText call. createMemoryTools() lets the LLM itself recall, remember, and forget.",
   "keywords": [
     "agent-memory",

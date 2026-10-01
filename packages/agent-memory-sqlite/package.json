@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-sqlite",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "SQLite adapter for agent-memory. Persistent long-term LLM agent memory for edge runtimes, local apps, and single-server deployments. Pure-JS cosine similarity search, optional sqlite-vss extension.",
   "keywords": [
     "agent-memory",
