@@ -123,7 +123,7 @@ describe("SQLiteAdapter", () => {
     });
     expect(summary).not.toBeNull();
     const items = await memory.getBySession("s8");
-    expect(items.some((i) => i.kind === "summary")).toBe(true);
+    expect(items.some((entry) => entry.kind === "summary")).toBe(true);
   });
 
   it("handles duplicate-id insertion (INSERT OR REPLACE)", async () => {
@@ -147,7 +147,7 @@ describe("SQLiteAdapter", () => {
     });
     const all = await mem.getBySession("s-dup");
     expect(all).toHaveLength(1);
-    const found = all.find((i) => i.id === item.id);
+    const found = all.find((entry) => entry.id === item.id);
     expect(found?.kind === "fact" ? found.value : "").toBe("TypeScript (updated)");
   });
 });

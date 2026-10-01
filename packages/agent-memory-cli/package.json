@@ -96,6 +96,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "better-sqlite3": "^13.0.3"
+    "better-sqlite3": "^12.4.1"
   }
 }
