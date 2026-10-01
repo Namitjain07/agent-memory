@@ -158,7 +158,10 @@ describe("AgentMemory — error wrapping", () => {
       update: async () => {},
       getBySession: async () => [] as never[]
     };
-    const m = new AgentMemory({ adapter: badAdapter as any });
+    // Adapter type is structural; cast through unknown so the bad mock fits
+    // the Adapter interface without an `any` lint warning.
+    const opts: ConstructorParameters<typeof AgentMemory>[0] = { adapter: badAdapter as never };
+    const m = new AgentMemory(opts);
     await expect(m.forget("x")).rejects.toThrow(/boom/);
   });
 

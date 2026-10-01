@@ -103,7 +103,7 @@ describe("SQLiteAdapter", () => {
     });
     await memory.update(item.id, { importance: 0.95 });
     const all = await memory.getBySession("s7");
-    const updated = all.find((i) => i.id === item.id);
+    const updated = all.find((entry) => entry.id === item.id);
     expect(updated?.importance).toBeCloseTo(0.95);
   });
 

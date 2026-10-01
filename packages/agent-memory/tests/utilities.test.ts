@@ -277,7 +277,7 @@ describe("Error hierarchy", () => {
 describe("fetchJSON with retry/timeout/AbortSignal", () => {
   it("retries on 503 and eventually succeeds", async () => {
     let calls = 0;
-    const fetchMock = async (url: string, init: RequestInit) => {
+    const fetchMock = async (_url: string, _init: RequestInit) => {
       calls += 1;
       if (calls === 1) {
         return new Response("Service Unavailable", { status: 503 });

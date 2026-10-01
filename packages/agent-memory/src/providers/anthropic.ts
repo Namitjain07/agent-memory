@@ -76,7 +76,7 @@ export function anthropicProvider(options: AnthropicProviderOptions): MemoryProv
       "[agent-memory] anthropicProvider does not support embeddings. Pair with another provider's embedFn."
     );
   };
-  const noopBatch = async (texts: string[]): Promise<number[][]> => {
+  const noopBatch = async (_texts: string[]): Promise<number[][]> => {
     throw new Error(
       "[agent-memory] anthropicProvider does not support embeddings. Pair with another provider's embedFn."
     );

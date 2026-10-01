@@ -36,6 +36,7 @@
  */
 
 import type { AgentMemory } from "@namitjain.india/agent-memory";
+import { createRequire } from "node:module";
 
 export interface AIMemoryOptions {
   memory: AgentMemory;
@@ -130,8 +131,11 @@ export function createMemoryTools(
     | undefined;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const ai = require("ai") as { tool?: typeof toolFn };
+    // `ai` is an optional peer dep; use createRequire so we can keep this
+    // function sync (it's part of the public API). If `ai` isn't installed,
+    // we throw a clear error below.
+    const req = createRequire(import.meta.url);
+    const ai = req("ai") as { tool?: typeof toolFn };
     toolFn = ai.tool;
   } catch {
     /* swallow — handled below */

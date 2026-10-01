@@ -63,7 +63,6 @@ export function piiScan(text: string, options: PIIRedactOptions = {}): PIIScanRe
     const matches = result.match(pattern);
     if (!matches || matches.length === 0) continue;
 
-    const token = label ? `${replacement}:${category}]`.replace("[", "[") : replacement;
     const safeToken = label ? `[REDACTED:${category}]` : replacement;
     result = result.replace(pattern, safeToken);
     detections.push({ category, count: matches.length });

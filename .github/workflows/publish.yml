@@ -18,7 +18,7 @@ permissions:
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
@@ -44,7 +44,7 @@ jobs:
 
   publish:
     name: Publish packages
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     # Optional: tie to a GitHub Actions environment for extra approval controls.
     # Create an environment called "npm-publish" in Settings → Environments.
@@ -55,7 +55,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
           cache: "npm"
 

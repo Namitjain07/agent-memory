@@ -9,7 +9,7 @@
  *   - Community detection: threshold-based connected components (simplified Louvain)
  */
 
-import type { AdjacencyList, GraphNode } from "./types";
+import type { AdjacencyList } from "./types";
 
 // ─── PageRank ─────────────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { AgentMemory, InMemoryAdapter } from "@namitjain.india/agent-memory";
+import { AgentMemory } from "@namitjain.india/agent-memory";
 import { withAIMemory, createMemoryTools } from "../src/index.js";
 
 const embedFn = async (text: string) => {

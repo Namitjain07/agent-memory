@@ -497,7 +497,7 @@ export class MemoryGraph {
 
     const candidates: { id: string; similarity: number }[] = [];
 
-    for (const [existingId, existingNode] of graph) {
+    for (const [existingId, _existingNode] of graph) {
       if (existingId === item.id) continue;
       const existingEmbed = this.embedCache.get(existingId);
       if (!existingEmbed) continue;

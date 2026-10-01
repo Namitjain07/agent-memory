@@ -7,7 +7,7 @@
  * Run with: `npx tsx examples/rag-pipeline/rag.ts`
  */
 
-import { AgentMemory, createProvider, type MemoryItem } from "@namitjain.india/agent-memory";
+import { AgentMemory, createProvider } from "@namitjain.india/agent-memory";
 
 const provider = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY });
 const memory = new AgentMemory({
