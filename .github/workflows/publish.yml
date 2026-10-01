@@ -8,6 +8,11 @@ on:
       - "v*"
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (e.g. v0.5.0). Leave blank to use the tag that triggered this run."
+        required: false
 
 # OIDC: grants this workflow permission to request a short-lived
 # npm publish token without storing any long-lived secret.
@@ -71,27 +76,61 @@ jobs:
       - name: Build all packages
         run: npm run build --workspaces --if-present
 
-      # Publish core package first (adapters depend on it for types)
+      # ── Authentication ──────────────────────────────────────────────────
+      # Use a manual npm token (NPM_TOKEN secret) if one is set;
+      # otherwise fall back to OIDC trusted publishing.
+      #
+      # Why both? The OIDC path is "modern" but requires you to register
+      # the trusted publisher on npmjs.com for each of the 6 packages
+      # (one-time setup). The token path works immediately if you have an
+      # `NPM_TOKEN` secret set, but is less secure (long-lived credential).
+      - name: Configure npm auth (token if present, else OIDC)
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > "$HOME/.npmrc"
+            echo "→ using NPM_TOKEN secret"
+          else
+            echo "→ using OIDC trusted publishing"
+          fi
+
+      # ── Publish in dependency order ────────────────────────────────────
+      # Core first (other packages depend on it for types).
+      # All 6 packages must already be registered as trusted publishers
+      # on npmjs.com OR the same NPM_TOKEN must have publish permission
+      # for all 6.
       - name: Publish @namitjain.india/agent-memory
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @namitjain.india/agent-memory-sqlite
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory-sqlite
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @namitjain.india/agent-memory-postgres
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory-postgres
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @namitjain.india/agent-memory-react
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory-react
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @namitjain.india/agent-memory-vercel
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory-vercel
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @namitjain.india/agent-memory-cli
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory-cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
