@@ -1,27 +1,73 @@
 version: 2
+
+# Dependabot settings tuned for low noise.
+#
+# Goals:
+#   - One PR per ecosystem per month (not one PR per package per week)
+#   - Maximum 3 open Dependabot PRs at a time
+#   - Security advisories still get an immediate PR (GitHub handles this
+#     automatically on top of the monthly schedule — no separate config
+#     needed; see https://docs.github.com/en/code-security/dependabot)
+#   - Lint tools (eslint/prettier) batched together so a single
+#     "bump all lint tools" PR covers them all
+#   - Auto-assign so PRs don't sit unowned
+#
+# To auto-merge Dependabot PRs once CI is green: Settings → Rules →
+# Rulesets → New ruleset matching `dependabot/**` with auto-merge enabled.
+
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    # Monthly schedule — every 1st Monday of the month at 10:00 UTC.
+    # Critical security updates arrive immediately regardless of this.
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
-    open-pull-requests-limit: 10
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    # Collapse every npm update into one of two PRs:
+    #   1. "all-dependencies" — all runtime + dev deps in one PR
+    #   2. "lint-tools"      — eslint + prettier + related, separate PR
+    # This is the single biggest noise reducer.
     groups:
-      production-dependencies:
-        dependency-type: "production"
-      development-dependencies:
-        dependency-type: "development"
+      all-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "*eslint*"
+          - "*prettier*"
+      lint-tools:
+        patterns:
+          - "*eslint*"
+          - "*prettier*"
     commit-message:
       prefix: "chore(deps)"
+      include: "scope"
     labels:
       - "dependencies"
+      - "automated"
     target-branch: "main"
+    reviewers:
+      - "Namitjain07"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 2
+    groups:
+      all-actions:
+        patterns:
+          - "*"
     commit-message:
       prefix: "ci"
     labels:
       - "ci"
+      - "automated"
+    target-branch: "main"
+    reviewers:
+      - "Namitjain07"
