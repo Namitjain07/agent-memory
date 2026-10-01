@@ -162,4 +162,8 @@ jobs:
         run: npm run build --workspaces --if-present
 
       - name: Run benchmarks
-        run: cd packages/agent-memory && npx vitest bench --run --reporter=default
+        # The bench file is at the repo root (benchmarks/recall.bench.ts),
+        # not inside packages/agent-memory. Run from the root with
+        # --passWithNoTests for resilience (no app code means no .test.ts
+        # files in the root, but vitest expects to find at least one).
+        run: npx vitest bench --run --reporter=default

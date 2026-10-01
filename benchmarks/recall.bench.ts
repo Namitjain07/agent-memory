@@ -10,9 +10,13 @@
  *
  * These are CPU/memory-bound, so they give a stable baseline for performance
  * regression tracking.
+ *
+ * Vitest 5 changed the bench API: `bench` is now a fixture on the test
+ * context, accessed inside a regular `test()`. See
+ * https://vitest.dev/guide/benchmarking
  */
 
-import { bench, describe } from "vitest";
+import { test } from "vitest";
 import { AgentMemory, InMemoryAdapter } from "@namitjain.india/agent-memory";
 
 function syntheticEmbed(text: string): number[] {
@@ -47,60 +51,49 @@ function makeMemory(itemCount: number) {
   return { memory, items };
 }
 
-describe("AgentMemory — benchmarks", () => {
-  bench(
-    "remember 100 items (with auto-embed)",
-    async () => {
-      const { memory, items } = makeMemory(100);
-      for (const item of items) {
-        await memory.remember(item);
-      }
-    },
-    { iterations: 20 }
-  );
+test("remember 100 items (with auto-embed)", async ({ bench }) => {
+  await bench("remember 100 items (with auto-embed)", { iterations: 20 }, async () => {
+    const { memory, items } = makeMemory(100);
+    for (const item of items) {
+      await memory.remember(item);
+    }
+  }).run();
+});
 
-  bench(
-    "rememberBatch 100 items (concurrency=5)",
-    async () => {
-      const { memory, items } = makeMemory(100);
-      await memory.rememberBatch({ items, concurrency: 5 });
-    },
-    { iterations: 20 }
-  );
+test("rememberBatch 100 items (concurrency=5)", async ({ bench }) => {
+  await bench("rememberBatch 100 items (concurrency=5)", { iterations: 20 }, async () => {
+    const { memory, items } = makeMemory(100);
+    await memory.rememberBatch({ items, concurrency: 5 });
+  }).run();
+});
 
-  bench(
-    "recall on 1k-item store",
-    async () => {
-      const { memory, items } = makeMemory(1000);
-      await memory.rememberBatch({ items, concurrency: 8 });
-      for (let i = 0; i < 50; i += 1) {
-        await memory.recall(`topic ${i % 10}`, { topK: 5 });
-      }
-    },
-    { iterations: 5 }
-  );
+test("recall on 1k-item store (hybrid scoring)", async ({ bench }) => {
+  await bench("recall on 1k-item store (hybrid scoring)", { iterations: 5 }, async () => {
+    const { memory, items } = makeMemory(1000);
+    await memory.rememberBatch({ items, concurrency: 8 });
+    for (let i = 0; i < 50; i += 1) {
+      await memory.recall(`topic ${i % 10}`, { topK: 5 });
+    }
+  }).run();
+});
 
-  bench(
-    "recall (no embed cache) on 1k-item store",
-    async () => {
-      // Disable embedding cache by passing a fresh memory without one
-      const memory = new AgentMemory({
-        adapter: new InMemoryAdapter(),
-        embedding: { embedFn: syntheticEmbed },
-        retrieval: { topK: 5, weights: { similarity: 0.7, keyword: 0, recency: 0.2, importance: 0.1 } }
-      });
-      const items = Array.from({ length: 1000 }, (_, i) => ({
-        kind: "fact" as const,
-        sessionId: "bench",
-        key: `k${i}`,
-        value: `Fact number ${i} about topic ${i % 10}`,
-        importance: 0.3 + (i % 7) * 0.1
-      }));
-      await memory.rememberBatch({ items, concurrency: 8 });
-      for (let i = 0; i < 50; i += 1) {
-        await memory.recall(`topic ${i % 10}`, { topK: 5 });
-      }
-    },
-    { iterations: 5 }
-  );
+test("recall on 1k-item store (vector-only)", async ({ bench }) => {
+  await bench("recall on 1k-item store (vector-only, no keyword)", { iterations: 5 }, async () => {
+    const memory = new AgentMemory({
+      adapter: new InMemoryAdapter(),
+      embedding: { embedFn: syntheticEmbed },
+      retrieval: { topK: 5, weights: { similarity: 0.7, keyword: 0, recency: 0.2, importance: 0.1 } }
+    });
+    const items = Array.from({ length: 1000 }, (_, i) => ({
+      kind: "fact" as const,
+      sessionId: "bench",
+      key: `k${i}`,
+      value: `Fact number ${i} about topic ${i % 10}`,
+      importance: 0.3 + (i % 7) * 0.1
+    }));
+    await memory.rememberBatch({ items, concurrency: 8 });
+    for (let i = 0; i < 50; i += 1) {
+      await memory.recall(`topic ${i % 10}`, { topK: 5 });
+    }
+  }).run();
 });
