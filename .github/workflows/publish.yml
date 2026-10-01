@@ -21,11 +21,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
@@ -51,9 +53,13 @@ jobs:
     environment: npm-publish
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
@@ -81,3 +87,11 @@ jobs:
       - name: Publish @namitjain.india/agent-memory-react
         run: npm publish --access public --provenance
         working-directory: packages/agent-memory-react
+
+      - name: Publish @namitjain.india/agent-memory-vercel
+        run: npm publish --access public --provenance
+        working-directory: packages/agent-memory-vercel
+
+      - name: Publish @namitjain.india/agent-memory-cli
+        run: npm publish --access public --provenance
+        working-directory: packages/agent-memory-cli

@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [main]
 
+# Default to the most-restrictive permission set; jobs override as needed.
 permissions:
   contents: read
 
@@ -20,16 +21,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
-      - run: npm ci --legacy-peer-deps
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
       - name: Prettier check
         run: npx prettier --check .
+
       - name: ESLint
         run: npx eslint . --max-warnings 0
 
@@ -38,38 +46,64 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
-      - run: npm ci --legacy-peer-deps
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
       # Build first so peer-dep types (e.g. @namitjain.india/agent-memory)
       # resolve from the locally-built dist/ folder.
-      - run: npm run build --workspaces --if-present
-      - run: npx tsc --noEmit -p packages/agent-memory
-      - run: npx tsc --noEmit -p packages/agent-memory-sqlite
-      - run: npx tsc --noEmit -p packages/agent-memory-postgres
-      - run: npx tsc --noEmit -p packages/agent-memory-react
-      - run: npx tsc --noEmit -p packages/agent-memory-vercel
-      - run: npx tsc --noEmit -p packages/agent-memory-cli
+      - name: Build packages
+        run: npm run build --workspaces --if-present
+
+      - name: Typecheck core
+        run: npx tsc --noEmit -p packages/agent-memory
+
+      - name: Typecheck sqlite
+        run: npx tsc --noEmit -p packages/agent-memory-sqlite
+
+      - name: Typecheck postgres
+        run: npx tsc --noEmit -p packages/agent-memory-postgres
+
+      - name: Typecheck react
+        run: npx tsc --noEmit -p packages/agent-memory-react
+
+      - name: Typecheck vercel
+        run: npx tsc --noEmit -p packages/agent-memory-vercel
+
+      - name: Typecheck cli
+        run: npx tsc --noEmit -p packages/agent-memory-cli
 
   build:
     name: Build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
-      - run: npm ci --legacy-peer-deps
-      - run: npm run build --workspaces --if-present
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build packages
+        run: npm run build --workspaces --if-present
 
   test:
     name: Test (Node ${{ matrix.node-version }})
@@ -81,17 +115,23 @@ jobs:
       fail-fast: false
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
+
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+
       - name: Build (so peer deps resolve)
         run: npm run build --workspaces --if-present
+
       - name: Run tests
         run: npm test
 
@@ -104,13 +144,22 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip bench]')"
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
           cache: "npm"
-      - run: npm ci --legacy-peer-deps
-      - run: npm run build --workspaces --if-present
-      - run: cd packages/agent-memory && npx vitest bench --run --reporter=default
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build (so benchmarks can import the dist)
+        run: npm run build --workspaces --if-present
+
+      - name: Run benchmarks
+        run: cd packages/agent-memory && npx vitest bench --run --reporter=default

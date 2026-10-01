@@ -1,0 +1,62 @@
+# OpenSSF Best Practices questionnaire metadata
+# https://www.bestpractices.dev/en/criteria
+# This file powers the CII Best Practices badge at the top of the README.
+#
+# When the project is registered, replace `agent-memory` in the badge URL
+# with the project's slug from https://bestpractices.dev/
+
+name: agent-memory
+description: |
+  Persistent long-term memory for LLM agents and AI chatbots. Hybrid vector
+  + keyword search, multi-tier scoping, encryption at rest, PII redaction,
+  retry/timeout, and a CLI. MIT-licensed, zero runtime deps in core.
+license: MIT
+repo: https://github.com/Namitjain07/agent-memory
+website: https://github.com/Namitjain07/agent-memory#readme
+documentation: https://github.com/Namitjain07/agent-memory/tree/main/docs
+
+# Compliance with the core criteria
+contribution_policy: https://github.com/Namitjain07/agent-memory/blob/main/CONTRIBUTING.md
+code_of_conduct: https://github.com/Namitjain07/agent-memory/blob/main/CODE_OF_CONDUCT.md
+security_policy: https://github.com/Namitjain07/agent-memory/blob/main/SECURITY.md
+license_location: https://github.com/Namitjain07/agent-memory/blob/main/LICENSE
+change_log: https://github.com/Namitjain07/agent-memory/blob/main/CHANGELOG.md
+release_notes: https://github.com/Namitjain07/agent-memory/releases
+
+# Encryption / transport
+encryption: HTTPS
+authentication_always_required: true
+secure_development: true
+crypto_uses_standard_libraries: true
+crypto_uses_standard_algorithms:
+  - AES-256-GCM
+  - scrypt
+password_storage_scheme: scrypt
+
+# Static analysis
+static_analysis:
+  - CodeQL (weekly, on push, on PR)
+  - ESLint
+  - Prettier
+  - TypeScript strict mode + exactOptionalPropertyTypes
+
+dynamic_analysis:
+  - Vitest (153 unit + integration tests)
+
+# Build & dependencies
+build_system: npm
+ci:
+  provider: GitHub Actions
+  configuration: https://github.com/Namitjain07/agent-memory/tree/main/.github/workflows
+dependency_update_tool: Dependabot (monthly, grouped, capped at 3 open PRs)
+
+# Vulnerabilities
+vulnerability_reporting: https://github.com/Namitjain07/agent-memory/security/advisories/new
+vulnerability_response_days: 7
+vulnerability_backports: true
+
+# Project activity
+maintained: true
+maintainers:
+  - https://github.com/Namitjain07
+last_activity: 2026-10-01

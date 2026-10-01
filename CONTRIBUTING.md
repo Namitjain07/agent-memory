@@ -6,8 +6,8 @@ Thanks for your interest in improving `agent-memory`! This document covers how t
 
 ### Prerequisites
 
-- Node.js 18.20+ or 20.x or 22.x
-- npm 9+
+- Node.js 20.x or 22.x (Node 18 reached EOL April 2025)
+- npm 10+
 
 ### First-time setup
 
