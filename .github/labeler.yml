@@ -1,0 +1,35 @@
+feature:
+  - head-branch: ["feat/**", "feature/**"]
+bug:
+  - head-branch: ["fix/**", "bugfix/**"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: "package.json"
+      - any-glob-to-any-file: "packages/**/package.json"
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.md", "docs/**", "examples/**"]
+tests:
+  - changed-files:
+      - any-glob-to-any-file: ["**/*.test.ts", "**/*.spec.ts", "tests/**"]
+core:
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-memory/src/**"
+sqlite:
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-memory-sqlite/**"
+postgres:
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-memory-postgres/**"
+react:
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-memory-react/**"
+vercel-ai:
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-memory-vercel/**"
+cli:
+  - changed-files:
+      - any-glob-to-any-file: "packages/agent-memory-cli/**"
