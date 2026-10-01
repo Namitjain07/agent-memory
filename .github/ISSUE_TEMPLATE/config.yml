@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Security vulnerability report
-    url: https://github.com/Namitjain07/agent/security/advisories/new
-    about: Please report security vulnerabilities privately.
+  - name: 💬 Discussions
+    url: https://github.com/Namitjain07/agent-memory/discussions
+    about: For "how do I..." questions and general community help
+  - name: 🔒 Security
+    url: https://github.com/Namitjain07/agent-memory/blob/main/SECURITY.md
+    about: Report security vulnerabilities privately

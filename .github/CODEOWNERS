@@ -1,0 +1,23 @@
+# CODEOWNERS — automatically requested reviewers for PRs.
+# See https://docs.github.com/en/repositories/creating-and-managing-repositories/about-code-owners
+
+# Default owners for everything in the repo
+*       @Namitjain07
+
+# Core engine
+/packages/agent-memory/src/    @Namitjain07
+/packages/agent-memory/tests/  @Namitjain07
+
+# Storage adapters
+/packages/agent-memory-sqlite/    @Namitjain07
+/packages/agent-memory-postgres/  @Namitjain07
+
+# Integrations
+/packages/agent-memory-react/   @Namitjain07
+/packages/agent-memory-vercel/  @Namitjain07
+/packages/agent-memory-cli/     @Namitjain07
+
+# CI / build
+/.github/        @Namitjain07
+/package.json    @Namitjain07
+/tsconfig*.json  @Namitjain07

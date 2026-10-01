@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+title: agent-memory
+message: |
+  If you use this software in academic work, please cite it using the
+  metadata below.
+type: software
+license: MIT
+authors:
+  - family-names: Jain
+    given-names: Namit
+    orcid: https://orcid.org/0000-0000-0000-0000
+    affiliation: Independent
+repository-code: https://github.com/Namitjain07/agent-memory
+url: https://github.com/Namitjain07/agent-memory
+keywords:
+  - ai
+  - agent-memory
+  - llm
+  - memory
+  - vector-search
+  - semantic-search
+  - rag
+  - retrieval-augmented-generation
+  - embeddings
+  - persistent-memory
+  - long-term-memory
+  - chatbot
+  - ai-agent
+  - autonomous-agents
+  - knowledge-graph
+  - context-engineering
+date-released: 2026-04-24
+version: 0.5.0

@@ -1,12 +1,25 @@
 # @namitjain.india/agent-memory-vercel
 
-Drop-in [Vercel AI SDK](https://sdk.vercel.ai) integration for [`@namitjain.india/agent-memory`](https://www.npmjs.com/package/@namitjain.india/agent-memory).
+> **Drop-in Vercel AI SDK integration for agent-memory.**
+> `withAIMemory()` auto-injects long-term memory into every `streamText` / `generateText` call. `createMemoryTools()` lets the LLM itself recall, remember, and forget.
+
+[![npm version](https://img.shields.io/npm/v/@namitjain.india/agent-memory-vercel?color=blueviolet&label=npm)](https://www.npmjs.com/package/@namitjain.india/agent-memory-vercel)
+[![npm downloads](https://img.shields.io/npm/dm/@namitjain.india/agent-memory-vercel?color=blue)](https://www.npmjs.com/package/@namitjain.india/agent-memory-vercel)
+[![CI](https://img.shields.io/github/actions/workflow/status/Namitjain07/agent-memory/ci.yml?label=CI)](https://github.com/Namitjain07/agent-memory/actions)
+[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Vercel AI SDK](https://img.shields.io/badge/Vercel%20AI%20SDK-3%20%7C%204%20%7C%205-000?logo=vercel)](https://sdk.vercel.ai/)
+
+Vercel AI SDK adapter for [agent-memory](https://www.npmjs.com/package/@namitjain.india/agent-memory).
+
+## Install
 
 ```bash
-npm install @namitjain.india/agent-memory-vercel @namitjain.india/agent-memory ai
+npm install @namitjain.india/agent-memory @namitjain.india/agent-memory-vercel ai @ai-sdk/openai
 ```
 
-## Quick start
+## Usage
+
+### Automatic memory injection
 
 ```ts
 import { openai } from "@ai-sdk/openai";
@@ -22,58 +35,45 @@ const memory = new AgentMemory({
 
 const model = withAIMemory(openai("gpt-4o-mini"), {
   memory,
-  sessionId: "user-123",
-  systemPrompt: "You are a helpful assistant."
+  sessionId: "user-1",
+  userId: "alex",
+  systemPrompt: "You are a helpful assistant.",
+  topK: 3,
+  autoSummariseAt: 20
 });
 
-const result = streamText({
+const { text } = await streamText({
   model,
-  messages: [{ role: "user", content: "What language do I prefer?" }]
+  prompt: "What's my name?"
 });
 ```
 
-The wrapper automatically:
-1. **Stores** every user turn.
-2. **Recalls** relevant past memories (vector + keyword + recency + importance).
-3. **Injects** them as a system message before the model call.
-4. **Persists** the assistant reply after streaming finishes.
-5. **Summarises** when the conversation grows beyond `autoSummariseAt`.
-
-## Tool mode (LLM-driven memory)
-
-Let the model call `memory_recall`, `memory_remember`, and `memory_forget` itself:
+### LLM-driven memory tools
 
 ```ts
 import { createMemoryTools } from "@namitjain.india/agent-memory-vercel";
 
 const result = streamText({
   model,
-  tools: createMemoryTools(memory, { sessionId: "user-123", userId: "u1" }),
-  prompt: "Please remember that my favourite colour is purple, then tell me what you know about me."
+  tools: createMemoryTools(memory, { sessionId: "user-1", userId: "alex" }),
+  prompt: "Please remember that I love purple, then tell me what you know about me."
 });
 ```
 
-## API
+## Features
 
-### `withAIMemory(model, options)`
+- 🪄 **One-liner integration** — wrap any Vercel AI SDK model
+- 🧠 **Auto-recall** — relevant memories prepended as a system message
+- 💾 **Auto-store** — both user and assistant turns persisted
+- 🛠️ **Tool mode** — let the LLM call `memory_recall` / `memory_remember` / `memory_forget` itself
+- 🔄 **Stream + generate** — works with both `streamText` and `generateText`
+- 👥 **Multi-tier** — supports `user` / `agent` / `session` tiers
+- 🪶 **Zero deps** — only peer-deps on `agent-memory` and `ai`
 
-| Option | Type | Default | Notes |
-|---|---|---|---|
-| `memory` | `AgentMemory` | required | The memory instance. |
-| `sessionId` | `string` | required | Conversation scope. |
-| `userId` | `string` | — | Promotes items to the `user` tier. |
-| `agentId` | `string` | — | Promotes items to the `agent` tier. |
-| `tier` | `"user" \| "agent" \| "session"` | — | Default tier for items stored. |
-| `topK` | `number` | engine default | Number of memories to recall. |
-| `systemPrompt` | `string` | — | Always-on system message. |
-| `autoSummariseAt` | `number` | — | Run `memory.summarise()` once a session exceeds this many entry items. |
+## Works with
 
-### `createMemoryTools(memory, scope?)`
-
-Returns three tool definitions compatible with the Vercel AI SDK:
-- `memory_recall({ query, topK })`
-- `memory_remember({ key, value, importance })`
-- `memory_forget({ id })`
+- **Vercel AI SDK**: 3.x · 4.x · 5.x
+- **Providers**: OpenAI · Anthropic · Google Gemini · Mistral · Cohere · Groq · Perplexity · Ollama · any AI SDK provider
 
 ## License
 

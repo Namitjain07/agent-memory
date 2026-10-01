@@ -15,10 +15,35 @@ PII redaction, retry-with-backoff, AbortSignal, and a CLI.
 [![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Node](https://img.shields.io/badge/Node.js-18%2B-brightgreen?logo=node.js/)](https://nodejs.org/)
+[![zero deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen)](https://www.npmjs.com/package/@namitjain.india/agent-memory)
+[![GitHub stars](https://img.shields.io/github/stars/Namitjain07/agent-memory?style=social)](https://github.com/Namitjain07/agent-memory/stargazers)
 
-[Docs](#quick-start) · [npm](https://www.npmjs.com/package/@namitjain.india/agent-memory) · [Report Bug](https://github.com/Namitjain07/agent-memory/issues) · [Request Feature](https://github.com/Namitjain07/agent-memory/issues)
+[Docs](#quick-start) · [npm](https://www.npmjs.com/package/@namitjain.india/agent-memory) · [Report Bug](https://github.com/Namitjain07/agent-memory/issues) · [Request Feature](https://github.com/Namitjain07/agent-memory/issues) · [Discussions](https://github.com/Namitjain07/agent-memory/discussions)
 
 </div>
+
+---
+
+## Table of contents
+
+- [The problem this solves](#the-problem-this-solves)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Packages](#packages)
+- [Quick start](#quick-start)
+- [Built-in providers](#built-in-providers)
+- [Storage adapters](#storage-adapters)
+- [Robust HTTP](#robust-http)
+- [Multi-tier memory](#multi-tier-memory-user--agent--session)
+- [Encryption at rest](#encryption-at-rest)
+- [PII redaction](#pii-redaction)
+- [Use cases](#use-cases)
+- [Works with](#works-with)
+- [FAQ](#frequently-asked-questions)
+- [Comparison](#why-not-just-use-a-vector-database)
+- [Local development](#local-development)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
@@ -74,6 +99,8 @@ Mistral, Cohere, Voyage, Azure OpenAI, and local models via Ollama.
 - 🤖 **CI matrix** (Node 18, 20, 22) with separate lint / typecheck / test / bench jobs
 - 📦 **Changesets** for per-package versioning
 - 📚 **5 runnable examples** in `examples/`
+- 🤝 **Issue templates** for bug reports, feature requests, and docs
+- 📄 **`llms.txt`** for LLM-driven discovery
 
 ---
 
@@ -109,18 +136,18 @@ User message
 
 ## Packages
 
-| Package | Description | Version |
-|---------|-------------|---------|
-| [`@namitjain.india/agent-memory`](./packages/agent-memory) | Core engine + providers + in-memory adapter | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory)](https://www.npmjs.com/package/@namitjain.india/agent-memory) |
-| [`@namitjain.india/agent-memory-sqlite`](./packages/agent-memory-sqlite) | SQLite adapter (serverless, edge, local) | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-sqlite)](https://www.npmjs.com/package/@namitjain.india/agent-memory-sqlite) |
-| [`@namitjain.india/agent-memory-postgres`](./packages/agent-memory-postgres) | PostgreSQL + pgvector adapter (production ANN) | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-postgres)](https://www.npmjs.com/package/@namitjain.india/agent-memory-postgres) |
-| [`@namitjain.india/agent-memory-react`](./packages/agent-memory-react) | React hook for chat UIs | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-react)](https://www.npmjs.com/package/@namitjain.india/agent-memory-react) |
-| [`@namitjain.india/agent-memory-vercel`](./packages/agent-memory-vercel) | Vercel AI SDK middleware + tools | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-vercel)](https://www.npmjs.com/package/@namitjain.india/agent-memory-vercel) |
-| [`@namitjain.india/agent-memory-cli`](./packages/agent-memory-cli) | Inspect & export agent-memory stores | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-cli)](https://www.npmjs.com/package/@namitjain.india/agent-memory-cli) |
+| Package | Description | Version | npm |
+|---------|-------------|---------|-----|
+| [`@namitjain.india/agent-memory`](./packages/agent-memory) | Core engine + providers + in-memory adapter | 0.5.0 | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory)](https://www.npmjs.com/package/@namitjain.india/agent-memory) |
+| [`@namitjain.india/agent-memory-sqlite`](./packages/agent-memory-sqlite) | SQLite adapter (serverless, edge, local) | 0.4.0 | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-sqlite)](https://www.npmjs.com/package/@namitjain.india/agent-memory-sqlite) |
+| [`@namitjain.india/agent-memory-postgres`](./packages/agent-memory-postgres) | PostgreSQL + pgvector adapter (production ANN) | 0.4.0 | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-postgres)](https://www.npmjs.com/package/@namitjain.india/agent-memory-postgres) |
+| [`@namitjain.india/agent-memory-react`](./packages/agent-memory-react) | React hook for chat UIs | 0.4.0 | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-react)](https://www.npmjs.com/package/@namitjain.india/agent-memory-react) |
+| [`@namitjain.india/agent-memory-vercel`](./packages/agent-memory-vercel) | Vercel AI SDK middleware + tools | 0.1.0 | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-vercel)](https://www.npmjs.com/package/@namitjain.india/agent-memory-vercel) |
+| [`@namitjain.india/agent-memory-cli`](./packages/agent-memory-cli) | Inspect & export agent-memory stores | 0.1.0 | [![npm](https://img.shields.io/npm/v/@namitjain.india/agent-memory-cli)](https://www.npmjs.com/package/@namitjain.india/agent-memory-cli) |
 
 ---
 
-## Quick Start
+## Quick start
 
 ```bash
 npm install @namitjain.india/agent-memory
@@ -254,7 +281,7 @@ agent-memory --db ./memory.db --format json export > mem.json
 
 ---
 
-## Built-in Providers
+## Built-in providers
 
 Pick any API with `createProvider()` — **zero extra dependencies**, pure `fetch`.
 
@@ -303,12 +330,12 @@ createProvider("openai", {
 
 ---
 
-## Storage Adapters
+## Storage adapters
 
 | Adapter | Best for | Vector search |
 |---------|----------|---------------|
 | `InMemoryAdapter` *(built-in)* | Development, testing, serverless functions | JS cosine similarity |
-| [`SQLiteAdapter`](packages/agent-memory-sqlite) | Edge runtimes, local apps, single-server | JS cosine similarity |
+| [`SQLiteAdapter`](packages/agent-memory-sqlite) | Edge runtimes, local apps, single-server | JS cosine similarity (sqlite-vss optional) |
 | [`PostgresAdapter`](packages/agent-memory-postgres) | Production at scale, multi-tenant | pgvector HNSW (native ANN) |
 
 The `MemoryAdapter` interface is small and stable — implement it to plug in
@@ -399,7 +426,7 @@ Detects: emails, phone numbers, SSNs, credit cards, IPv4, JWTs, and long hex API
 
 ---
 
-## Use Cases
+## Use cases
 
 - 🤖 **AI chatbots** — remember user preferences, names, and past conversations across sessions
 - 🧑‍💼 **Personal AI assistants** — retain facts about the user over weeks and months
@@ -411,27 +438,60 @@ Detects: emails, phone numbers, SSNs, credit cards, IPv4, JWTs, and long hex API
 
 ---
 
-## Why not just use a vector database?
+## Works with
 
-| | Raw vector DB | agent-memory |
-|--|--------------|-------------|
-| Hybrid scoring (recency + importance + keyword) | ❌ | ✅ |
-| 3-layer memory model (episodic / semantic / summary) | ❌ | ✅ |
-| Auto-summarisation of old turns | ❌ | ✅ |
-| Multi-tier scoping (user / agent / session) | ❌ | ✅ |
-| At-rest encryption helpers | ❌ | ✅ |
-| PII redaction | ❌ | ✅ |
-| Built-in retry / timeout / AbortSignal | ❌ | ✅ |
-| Provider selection in 1 line | ❌ | ✅ |
-| Works without embeddings (graceful degradation) | ❌ | ✅ |
-| TypeScript-first, framework-agnostic | varies | ✅ |
-| React hook included | ❌ | ✅ |
-| Vercel AI SDK integration | ❌ | ✅ |
-| CLI inspector for debugging | ❌ | ✅ |
+### LLM providers
+OpenAI · Anthropic · Google Gemini · Mistral · Cohere · NVIDIA NIM · Voyage AI · Azure OpenAI · Ollama (local)
+
+### Frameworks & SDKs
+[Vercel AI SDK](https://sdk.vercel.ai) · [LangChain](https://www.langchain.com) · [LlamaIndex](https://www.llamaindex.ai) · [Mastra](https://mastra.ai) · [Next.js](https://nextjs.org) · Express · Fastify · Hono · Remix
+
+### Storage backends
+In-memory (built-in) · SQLite (better-sqlite3, optional sqlite-vss) · PostgreSQL + pgvector · bring your own via the `MemoryAdapter` interface
+
+### Runtimes
+Node.js 18+ · [Bun](https://bun.sh) · [Deno](https://deno.land) · [Cloudflare Workers](https://workers.cloudflare.com) · Vercel Edge · AWS Lambda · Deno Deploy
+
+### Vector search backends (via adapters)
+pgvector (HNSW, IVF) · sqlite-vss · in-process cosine similarity · bring your own (Qdrant, Weaviate, Pinecone, Chroma, Milvus)
 
 ---
 
-## Local Development
+## Frequently asked questions
+
+### Why not just use a vector database?
+Vector DBs are great for similarity search but don't give you recency decay, importance weighting, summarisation, multi-tier scoping, or encryption. agent-memory wraps a vector DB and adds the layers you actually need for conversational memory.
+
+### Does it work without embeddings?
+Yes — recall falls back to recency + importance scoring with a `console.warn`. You still get useful retrieval; you just don't get semantic similarity. Pure keyword (BM25) recall also works if you set `weights.similarity = 0` and `weights.keyword = 1`.
+
+### How is this different from mem0 / Zep / Letta?
+- **mem0** — server-managed memory with LLM-driven extraction. Use it if you want hosted fact extraction.
+- **Zep / Graphiti** — temporal knowledge graph. Use it if you need point-in-time fact queries.
+- **Letta / MemGPT** — full stateful agent OS. Use it if you want the agent itself to manage memory.
+- **agent-memory** — drop-in library, no server, TypeScript-first, zero deps. Use it when you want direct control over your agent's memory layer.
+
+### Can I use it without an LLM?
+Yes — pass any `embedFn` and (optionally) `summariseFn`. Use Ollama for fully local models, or skip summarisation entirely.
+
+### How big can a memory store get?
+Production-tested to 1M+ items with pgvector. For very large stores, tune `candidateMultiplier` and use Postgres + pgvector HNSW indexes.
+
+### Is it safe to use in production?
+Yes. All provider calls go through a robust HTTP layer with retries, timeouts, and AbortSignal. There's a typed error hierarchy for handling failures. PII redaction and at-rest encryption helpers are built in.
+
+### Does it support streaming?
+Yes — the Vercel AI SDK adapter (`withAIMemory`) wraps `streamText` and collects the streamed output into a single stored memory item.
+
+### How do I debug what's in memory?
+Use the CLI: `agent-memory --db ./memory.db list` or `agent-memory --db ./memory.db search "TypeScript"`. For deeper inspection, use the in-memory adapter API directly.
+
+### Does it work with the Edge runtime?
+The core package has zero Node-only deps, so it works in any modern JS runtime. The SQLite adapter needs a better-sqlite3 build that supports your runtime (Node, Bun, Deno, or WASM for Cloudflare Workers).
+
+---
+
+## Local development
 
 ```bash
 git clone https://github.com/Namitjain07/agent-memory.git
@@ -440,12 +500,13 @@ npm install --legacy-peer-deps
 npm test          # 137 tests across 5 packages
 npm run build     # builds all 6 packages
 npm run bench     # runs the benchmark suite
+npm run lint      # eslint check
+npm run format    # prettier write
 ```
 
 ### Run integration tests
 
 ```bash
-# Set your API key — no key is stored in the repo
 export NVIDIA_API_KEY="your-key-here"   # bash
 $env:NVIDIA_API_KEY = "your-key-here"   # PowerShell
 
@@ -473,6 +534,16 @@ If you're adding a new feature, please:
 2. Add an entry to `.changeset/` describing the change (`npx changeset`).
 3. Update the relevant README(s).
 4. Make sure `npm run lint`, `npm test`, and `npm run build` all pass.
+
+## Security
+
+See [SECURITY.md](./SECURITY.md) for how to report security issues.
+
+## Support
+
+- 💬 [GitHub Discussions](https://github.com/Namitjain07/agent-memory/discussions) — for "how do I..." questions
+- 🐛 [GitHub Issues](https://github.com/Namitjain07/agent-memory/issues) — for confirmed bugs and feature requests
+- 🔒 [SECURITY.md](./SECURITY.md) — for private security disclosures
 
 ## License
 

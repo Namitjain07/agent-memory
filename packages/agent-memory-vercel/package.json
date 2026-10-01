@@ -1,27 +1,40 @@
 {
   "name": "@namitjain.india/agent-memory-vercel",
   "version": "0.1.0",
-  "description": "Drop-in Vercel AI SDK memory middleware for agent-memory",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Namitjain07/agent-memory.git"
-  },
-  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
-  "bugs": {
-    "url": "https://github.com/Namitjain07/agent-memory/issues"
-  },
+  "description": "Drop-in Vercel AI SDK integration for agent-memory. withAIMemory() auto-injects long-term memory into every streamText / generateText call. createMemoryTools() lets the LLM itself recall, remember, and forget.",
   "keywords": [
+    "agent-memory",
     "ai",
-    "memory",
-    "agent",
-    "vercel",
-    "vercel-ai-sdk",
+    "ai-agent",
     "ai-sdk",
-    "stream",
-    "chat"
+    "anthropic",
+    "chatbot",
+    "claude",
+    "generate-text",
+    "gpt",
+    "llm",
+    "llm-agent",
+    "llm-memory",
+    "memory",
+    "memory-tools",
+    "nextjs",
+    "openai",
+    "rag",
+    "sdk",
+    "stream-text",
+    "streaming",
+    "typescript",
+    "vercel",
+    "vercel-ai",
+    "vercel-ai-sdk"
   ],
   "license": "MIT",
+  "author": {
+    "name": "Namit Jain",
+    "url": "https://github.com/Namitjain07"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -34,18 +47,41 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git",
+    "directory": "packages/agent-memory-vercel"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Namitjain07"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test": "vitest run"
   },
   "peerDependencies": {
-    "@namitjain.india/agent-memory": ">=0.4.0",
+    "@namitjain.india/agent-memory": ">=0.5.0",
     "ai": "^3.0.0 || ^4.0.0 || ^5.0.0"
-  },
-  "devDependencies": {
-    "@namitjain.india/agent-memory": "*"
   },
   "peerDependenciesMeta": {
     "ai": {
@@ -53,6 +89,7 @@
     }
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

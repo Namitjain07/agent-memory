@@ -1,6 +1,16 @@
 # @namitjain.india/agent-memory-cli
 
-Inspect, search, and manage agent-memory stores from the command line.
+> **CLI inspector for agent-memory.**
+> List, search, show, export, and inspect any agent-memory SQLite store from the terminal. Output as table, JSON, or TSV. Read-only by design.
+
+[![npm version](https://img.shields.io/npm/v/@namitjain.india/agent-memory-cli?color=blueviolet&label=npm)](https://www.npmjs.com/package/@namitjain.india/agent-memory-cli)
+[![npm downloads](https://img.shields.io/npm/dm/@namitjain.india/agent-memory-cli?color=blue)](https://www.npmjs.com/package/@namitjain.india/agent-memory-cli)
+[![CI](https://img.shields.io/github/actions/workflow/status/Namitjain07/agent-memory/ci.yml?label=CI)](https://github.com/Namitjain07/agent-memory/actions)
+[![license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Command-line inspector for [agent-memory](https://www.npmjs.com/package/@namitjain.india/agent-memory).
+
+## Install
 
 ```bash
 npm install -g @namitjain.india/agent-memory-cli

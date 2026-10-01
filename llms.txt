@@ -1,0 +1,84 @@
+# agent-memory
+
+> Persistent long-term memory for LLM agents and AI chatbots. Hybrid vector + BM25 search, multi-tier scoping, encryption, retries, zero runtime dependencies.
+
+## What is it?
+
+`agent-memory` is a TypeScript-first monorepo that gives LLM agents (OpenAI, Anthropic, Gemini, Mistral, Cohere, Voyage, Ollama, etc.) real, persistent, searchable memory across conversations.
+
+## Why use it?
+
+- **Stateless LLM calls are a problem.** Every API call forgets prior context. agent-memory gives your agent the equivalent of long-term memory.
+- **It's a library, not a service.** No server to run, no hosted platform. Drop it into any Node 18+ app.
+- **Provider-agnostic.** Works with all major LLM APIs and local models via Ollama.
+- **Zero runtime deps.** Pure `fetch`-based providers.
+- **TypeScript-first.** Fully typed, ESM + CJS, strict mode throughout.
+- **Multi-tier memory.** User / agent / session tiers (like mem0).
+- **Hybrid retrieval.** Vector + BM25 keyword + recency decay + importance weighting.
+- **Robust HTTP.** Retry with exponential backoff, AbortSignal, timeouts.
+
+## Key links
+
+- Repository: https://github.com/Namitjain07/agent-memory
+- npm: https://www.npmjs.com/package/@namitjain.india/agent-memory
+- Documentation: https://github.com/Namitjain07/agent-memory#readme
+- Examples: https://github.com/Namitjain07/agent-memory/tree/main/examples
+- Changelog: https://github.com/Namitjain07/agent-memory/blob/main/CHANGELOG.md
+- Issues: https://github.com/Namitjain07/agent-memory/issues
+
+## Packages
+
+- `@namitjain.india/agent-memory` — core engine + providers + in-memory adapter
+- `@namitjain.india/agent-memory-sqlite` — SQLite adapter (edge, local, single-server)
+- `@namitjain.india/agent-memory-postgres` — PostgreSQL + pgvector adapter (production)
+- `@namitjain.india/agent-memory-react` — React hook for chat UIs
+- `@namitjain.india/agent-memory-vercel` — Vercel AI SDK middleware + tools
+- `@namitjain.india/agent-memory-cli` — `agent-memory` CLI inspector
+
+## Common use cases
+
+1. AI chatbots that remember user preferences across sessions
+2. Personal AI assistants that retain facts over weeks/months
+3. RAG pipelines augmented with semantically relevant prior interactions
+4. AI game NPCs with persistent memory of player interactions
+5. Customer support bots that recall ticket history
+6. Long-running research agents that accumulate knowledge
+7. Writing assistants that remember document context and prior drafts
+
+## Quick start
+
+```bash
+npm install @namitjain.india/agent-memory
+```
+
+```ts
+import { AgentMemory, createProvider, withMemory } from "@namitjain.india/agent-memory";
+
+const provider = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY });
+const memory = new AgentMemory({ embedding: provider });
+
+const runAgent = withMemory(callYourLLM, { memory, sessionId: "user-1" });
+await runAgent([{ role: "user", content: "My name is Alex." }]);
+const reply = await runAgent([{ role: "user", content: "What's my name?" }]);
+// → "Your name is Alex!"
+```
+
+## Architecture
+
+3-layer memory model:
+- **Episodic** — conversation turns
+- **Semantic** — facts and preferences
+- **Summary** — compressed history of old turns
+
+Hybrid scoring formula:
+`score = 0.55·vector_similarity + 0.15·BM25_keyword + 0.2·recency_decay + 0.1·importance`
+
+Storage adapters (in-memory, SQLite, Postgres) all implement the same `MemoryAdapter` interface.
+
+## Keywords
+
+ai, ai-agent, agent-memory, llm, llm-agent, llm-memory, memory, memory-engine, memory-layer, persistent-memory, long-term-memory, chatbot, chatbot-memory, conversation-memory, semantic-search, vector-search, vector-database, rag, retrieval-augmented-generation, embeddings, knowledge-graph, memory-graph, openai, anthropic, claude, gpt, gemini, mistral, cohere, ollama, vercel-ai-sdk, langchain, llamaindex, nextjs, react, typescript, sqlite, pgvector, postgres, postgresql, edge-runtime, serverless, context-engineering, autonomous-agents, mcp, sdk, developer-tools, ai-assistant, persistent-ai, context, persistence.
+
+## License
+
+MIT © Namit Jain (https://github.com/Namitjain07)

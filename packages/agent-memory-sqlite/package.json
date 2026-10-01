@@ -1,26 +1,39 @@
 {
   "name": "@namitjain.india/agent-memory-sqlite",
   "version": "0.4.0",
-  "description": "SQLite adapter for agent-memory",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Namitjain07/agent-memory.git"
-  },
-  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
-  "bugs": {
-    "url": "https://github.com/Namitjain07/agent-memory/issues"
-  },
+  "description": "SQLite adapter for agent-memory. Persistent long-term LLM agent memory for edge runtimes, local apps, and single-server deployments. Pure-JS cosine similarity search, optional sqlite-vss extension.",
   "keywords": [
+    "agent-memory",
     "ai",
-    "memory",
+    "ai-memory",
     "agent",
-    "sqlite",
-    "persistence",
+    "better-sqlite3",
+    "chatbot",
+    "edge-runtime",
+    "embeddings",
+    "llm",
+    "llm-agent",
     "local-storage",
-    "vector-search"
+    "memory",
+    "memory-engine",
+    "persistence",
+    "persistent-memory",
+    "rag",
+    "serverless",
+    "semantic-search",
+    "sqlite",
+    "sqlite-vss",
+    "typescript",
+    "vector-search",
+    "vercel-edge"
   ],
   "license": "MIT",
+  "author": {
+    "name": "Namit Jain",
+    "url": "https://github.com/Namitjain07"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -32,14 +45,41 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git",
+    "directory": "packages/agent-memory-sqlite"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Namitjain07"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test": "vitest run"
   },
   "peerDependencies": {
-    "@namitjain.india/agent-memory": ">=0.3.0",
+    "@namitjain.india/agent-memory": ">=0.5.0",
     "better-sqlite3": "^11.0.0",
     "sqlite-vss": "^0.1.2"
   },
@@ -52,11 +92,11 @@
     }
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
-    "better-sqlite3": "^13.0.3",
-    "vitest": "^5.0.3"
+    "better-sqlite3": "^13.0.3"
   }
 }

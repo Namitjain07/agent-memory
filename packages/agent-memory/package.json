@@ -1,44 +1,70 @@
 {
   "name": "@namitjain.india/agent-memory",
   "version": "0.5.0",
-  "description": "Production-grade memory engine for AI agents",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Namitjain07/agent-memory.git"
-  },
-  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
-  "bugs": {
-    "url": "https://github.com/Namitjain07/agent-memory/issues"
-  },
+  "description": "Persistent long-term memory for LLM agents and AI chatbots. Hybrid vector + BM25 search, multi-tier (user/agent/session), encryption, retries, and zero deps. Works with OpenAI, Anthropic, Gemini, Mistral, Cohere, Voyage, Ollama.",
   "keywords": [
     "ai",
-    "memory",
-    "agent",
-    "llm",
-    "embeddings",
-    "vector-search",
-    "semantic-search",
-    "context",
-    "conversation-memory",
     "ai-agent",
-    "openai",
-    "claude",
-    "rag",
-    "retrieval-augmented-generation",
-    "knowledge-graph",
-    "graph-memory",
-    "pagerank",
-    "spreading-activation",
-    "long-term-memory",
-    "persistent-memory",
-    "chatbot-memory",
+    "ai-assistant",
+    "ai-memory",
+    "agent",
+    "agent-memory",
+    "agents",
+    "ai-sdk",
+    "anthropic",
+    "assistant",
     "autonomous-agents",
+    "chatbot",
+    "chatbot-memory",
+    "claude",
+    "coding-agent",
+    "context",
+    "context-engineering",
+    "conversation-memory",
+    "developer-tools",
+    "embeddings",
+    "episodic-memory",
+    "gpt",
+    "knowledge-graph",
+    "langchain",
+    "llm",
+    "llm-agent",
+    "llm-memory",
+    "llamaindex",
+    "long-term-memory",
+    "mcp",
+    "memory",
+    "memory-engine",
     "memory-graph",
-    "graphrag",
-    "hipporag"
+    "memory-layer",
+    "nextjs",
+    "ollama",
+    "openai",
+    "openai-compatible",
+    "persistence",
+    "persistent-memory",
+    "pgvector",
+    "pyppeteer",
+    "rag",
+    "react",
+    "retrieval-augmented-generation",
+    "sdk",
+    "semantic-search",
+    "session-memory",
+    "sqlite",
+    "typescript",
+    "vector-database",
+    "vector-search",
+    "vercel-ai-sdk",
+    "vercel-ai"
   ],
   "license": "MIT",
+  "author": {
+    "name": "Namit Jain",
+    "url": "https://github.com/Namitjain07"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -55,13 +81,42 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git",
+    "directory": "packages/agent-memory"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/Namitjain07"
+  },
   "scripts": {
     "build": "tsup src/index.ts src/beta.ts --format cjs,esm --dts --clean",
-    "test": "vitest run"
+    "test": "vitest run",
+    "bench": "vitest bench --run"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }
