@@ -61,7 +61,11 @@ export function selectById(handle: SQLiteHandle, id: string): SqliteMemoryItem |
 }
 
 export function searchLike(handle: SQLiteHandle, query: string, sessionId?: string): SqliteMemoryItem[] {
-  const like = `%${query.replace(/[%_]/g, "\\$&")}%`;
+  // Escape backslash FIRST (so user-supplied backslashes don't accidentally
+  // escape our % and _ escapes), then escape LIKE wildcards % and _.
+  // Without this, a query containing \ would let the user "escape" the
+  // wildcards and change the meaning of the search. (CodeQL alert.)
+  const like = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
   if (sessionId) {
     return handle
       .prepare(

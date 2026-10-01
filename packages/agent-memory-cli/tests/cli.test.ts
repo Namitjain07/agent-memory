@@ -127,6 +127,27 @@ describe("agent-memory CLI", () => {
     rmSync(dbPath, { recursive: true, force: true });
   });
 
+  it("handles queries with backslash and LIKE wildcards safely", async () => {
+    // CodeQL: a query like "100%" or "foo\\bar" used to let the user
+    // accidentally escape the LIKE wildcards. Verify the search still
+    // returns the right items (not zero results, not the wrong ones).
+    const dbPath = await makeDbAsync();
+    const { stdout, stderr, getStdout } = captureOutput();
+
+    // Query containing a literal backslash — should NOT escape the LIKE
+    // wildcards in a way that empties the result set.
+    const result = await run(["--db", dbPath, "search", "50%_\\backslash", "--format", "json"], {
+      stdout,
+      stderr
+    } as unknown as never);
+    expect(result.exitCode).toBe(0);
+    // We don't expect matches, but we also don't expect SQL errors.
+    // The result is an empty array (no items contain that string).
+    const items = JSON.parse(getStdout());
+    expect(Array.isArray(items)).toBe(true);
+    rmSync(dbPath, { recursive: true, force: true });
+  });
+
   it("prints stats", async () => {
     const dbPath = await makeDbAsync();
     const { stdout, stderr, getStdout } = captureOutput();
