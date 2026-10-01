@@ -4,7 +4,7 @@ import type {
   MemorySearchOptions,
   MemoryUpdate
 } from "../types/adapter";
-import type { MemoryItem } from "../types/memory";
+import type { MemoryItem, MemoryTier } from "../types/memory";
 import { cosineSimilarity, normalizeSimilarity } from "../utils/math";
 
 /**
@@ -23,7 +23,7 @@ export class InMemoryAdapter implements MemoryAdapter {
     this.store.set(item.id, { ...item });
 
     const ids = this.sessionIndex.get(item.sessionId) ?? [];
-    ids.push(item.id);
+    if (!ids.includes(item.id)) ids.push(item.id);
     this.sessionIndex.set(item.sessionId, ids);
   }
 
@@ -37,7 +37,7 @@ export class InMemoryAdapter implements MemoryAdapter {
     for (const id of ids) {
       const item = this.store.get(id);
       if (!item) continue;
-      if (options.kinds && !options.kinds.includes(item.kind)) continue;
+      if (!this.matchesFilters(item, options)) continue;
       items.push(item);
     }
 
@@ -93,5 +93,16 @@ export class InMemoryAdapter implements MemoryAdapter {
       this.store.delete(id);
     }
     this.sessionIndex.delete(sessionId);
+  }
+
+  private matchesFilters(item: MemoryItem, options: MemorySearchOptions): boolean {
+    if (options.kinds && !options.kinds.includes(item.kind)) return false;
+    if (options.tiers) {
+      const tier: MemoryTier = item.tier ?? "session";
+      if (!options.tiers.includes(tier)) return false;
+    }
+    if (options.userId && item.userId !== options.userId) return false;
+    if (options.agentId && item.agentId !== options.agentId) return false;
+    return true;
   }
 }

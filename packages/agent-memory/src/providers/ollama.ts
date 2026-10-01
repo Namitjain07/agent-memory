@@ -6,6 +6,8 @@
  */
 import type { SummariseFn } from "../types/config";
 import { buildSummaryPrompt, buildConversationText, fetchJSON, type MemoryProvider } from "./types";
+import type { RequestOptions } from "../utils/http";
+import { DEFAULT_RETRY_POLICY } from "../utils/http";
 
 export interface OllamaProviderOptions {
   /** Ollama server URL. Defaults to `http://localhost:11434`. */
@@ -14,6 +16,8 @@ export interface OllamaProviderOptions {
   embeddingModel?: string;
   /** Model for chat / summarisation. Defaults to `llama3.2`. */
   chatModel?: string;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
 interface OllamaEmbedResponse {
@@ -37,6 +41,7 @@ export function ollamaProvider(options: OllamaProviderOptions = {}): MemoryProvi
   const embeddingModel = options.embeddingModel ?? "nomic-embed-text";
   const chatModel = options.chatModel ?? "llama3.2";
   const headers = {};
+  const requestOptions = options.requestOptions;
 
   const embedBatch = async (texts: string[]): Promise<number[][]> => {
     if (texts.length === 0) return [];
@@ -44,7 +49,12 @@ export function ollamaProvider(options: OllamaProviderOptions = {}): MemoryProvi
     const res = await fetchJSON<OllamaEmbedResponse>(
       `${base}/api/embed`,
       { model: embeddingModel, input: texts },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "ollama embed-batch"
+      }
     );
     return res.embeddings;
   };
@@ -64,10 +74,22 @@ export function ollamaProvider(options: OllamaProviderOptions = {}): MemoryProvi
         stream: false,
         options: { temperature: 0.3 }
       },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "ollama summarise"
+      }
     );
     return res.message?.content?.trim() ?? buildConversationText(entries);
   };
 
-  return { name: "ollama", embedFn, embedBatchFn: embedBatch, summarise };
+  const provider: MemoryProvider = {
+    name: "ollama",
+    embedFn,
+    embedBatchFn: embedBatch,
+    summarise
+  };
+  if (requestOptions) provider.defaultRequestOptions = requestOptions;
+  return provider;
 }

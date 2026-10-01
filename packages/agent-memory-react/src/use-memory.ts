@@ -27,6 +27,7 @@ export interface UseMemoryResult {
   remember: (input: Omit<RememberInput, "sessionId">) => Promise<MemoryItem>;
   recall: (query: string, options?: Omit<RecallOptions, "sessionId">) => Promise<RecallResult[]>;
   forget: (id: string) => Promise<void>;
+  update: (id: string, data: Parameters<AgentMemory["update"]>[1]) => Promise<void>;
   inject: (
     messages: MemoryMessage[],
     options?: Omit<RecallOptions, "sessionId"> & { query?: string }
@@ -106,6 +107,12 @@ export function useMemory(
     [memory, wrapAsync]
   );
 
+  const update = useCallback(
+    (id: string, data: Parameters<AgentMemory["update"]>[1]) =>
+      wrapAsync(() => memory.update(id, data)),
+    [memory, wrapAsync]
+  );
+
   const inject = useCallback(
     async (
       currentMessages: MemoryMessage[],
@@ -152,6 +159,7 @@ export function useMemory(
     remember,
     recall,
     forget,
+    update,
     inject,
     summarise,
     clearSession,

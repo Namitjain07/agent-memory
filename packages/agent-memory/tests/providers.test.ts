@@ -282,14 +282,13 @@ describe("googleProvider", () => {
 describe("anthropicProvider", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("has summarise but embedFn returns empty array (no fetch call)", async () => {
+  it("has summarise but embedFn throws a helpful error (no fetch call)", async () => {
     vi.stubGlobal("fetch", vi.fn());
     const provider = anthropicProvider({ apiKey: "k" });
     expect(provider.name).toBe("anthropic");
     expect(provider.summarise).toBeDefined();
 
-    const vec = await provider.embedFn("test");
-    expect(vec).toEqual([]);
+    await expect(provider.embedFn("test")).rejects.toThrow(/does not support embeddings/);
     expect(fetch).not.toHaveBeenCalled();
   });
 

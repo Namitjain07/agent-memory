@@ -1,10 +1,26 @@
 export type MemoryRole = "system" | "user" | "assistant" | "tool";
 export type MemoryKind = "entry" | "fact" | "summary";
 
+/**
+ * A memory tier is a logical scope for memories, similar to mem0's
+ * user / agent / session tiers.
+ *
+ * - `user`   — long-term facts about an end-user (preferences, profile)
+ * - `agent`  — agent persona / behaviour / learned instructions
+ * - `session` — per-conversation context (default if omitted)
+ */
+export type MemoryTier = "user" | "agent" | "session";
+
 export interface BaseMemoryItem {
   id: string;
   kind: MemoryKind;
   sessionId: string;
+  /** Optional user/agent tier. Defaults to "session" when omitted. */
+  tier?: MemoryTier;
+  /** Optional explicit user id. When `tier === "user"`, this is the canonical key. */
+  userId?: string;
+  /** Optional explicit agent id. When `tier === "agent"`, this is the canonical key. */
+  agentId?: string;
   timestamp: number;
   importance: number;
   embedding?: number[];
@@ -43,5 +59,8 @@ export interface MemoryMessage {
 export interface MemoryStats {
   total: number;
   byKind: Record<MemoryKind, number>;
+  byTier?: Partial<Record<MemoryTier, number>>;
   sessionIds: string[];
+  userIds?: string[];
+  agentIds?: string[];
 }

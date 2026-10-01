@@ -1,6 +1,6 @@
 {
   "name": "@namitjain.india/agent-memory-react",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "React hook utilities for agent-memory",
   "repository": {
     "type": "git",

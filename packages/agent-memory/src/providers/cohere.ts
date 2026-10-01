@@ -4,6 +4,8 @@
  */
 import type { SummariseFn } from "../types/config";
 import { buildSummaryPrompt, buildConversationText, fetchJSON, type MemoryProvider } from "./types";
+import type { RequestOptions } from "../utils/http";
+import { DEFAULT_RETRY_POLICY } from "../utils/http";
 
 export interface CohereProviderOptions {
   apiKey: string;
@@ -18,6 +20,8 @@ export interface CohereProviderOptions {
    */
   inputType?: "search_document" | "search_query" | "classification" | "clustering";
   baseURL?: string;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
 interface CohereEmbedResponse {
@@ -41,6 +45,7 @@ export function cohereProvider(options: CohereProviderOptions): MemoryProvider {
   const chatModel = options.chatModel ?? "command-r-plus";
   const inputType = options.inputType ?? "search_document";
   const headers = { Authorization: `Bearer ${options.apiKey}` };
+  const requestOptions = options.requestOptions;
 
   const embedBatch = async (texts: string[]): Promise<number[][]> => {
     if (texts.length === 0) return [];
@@ -52,7 +57,12 @@ export function cohereProvider(options: CohereProviderOptions): MemoryProvider {
         input_type: inputType,
         embedding_types: ["float"]
       },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "cohere embed-batch"
+      }
     );
     return res.embeddings.float;
   };
@@ -63,8 +73,6 @@ export function cohereProvider(options: CohereProviderOptions): MemoryProvider {
     return vec;
   };
 
-  const embedBatchFn = embedBatch;
-
   const summarise: SummariseFn = async ({ entries }) => {
     const res = await fetchJSON<CohereChatResponse>(
       `${base}/chat`,
@@ -74,11 +82,23 @@ export function cohereProvider(options: CohereProviderOptions): MemoryProvider {
         max_tokens: 512,
         temperature: 0.3
       },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "cohere summarise"
+      }
     );
     const text = res.message?.content?.find((c) => c.type === "text")?.text;
     return text?.trim() ?? buildConversationText(entries);
   };
 
-  return { name: "cohere", embedFn, embedBatchFn, summarise };
+  const provider: MemoryProvider = {
+    name: "cohere",
+    embedFn,
+    embedBatchFn: embedBatch,
+    summarise
+  };
+  if (requestOptions) provider.defaultRequestOptions = requestOptions;
+  return provider;
 }

@@ -11,7 +11,8 @@ import type {
   MemoryMessage,
   MemoryRole,
   MemoryStats,
-  MemorySummary
+  MemorySummary,
+  MemoryTier
 } from "./memory";
 
 export type EmbedFn = (text: string) => Promise<number[]>;
@@ -28,6 +29,8 @@ export type SummariseFn = (input: SummariseInput) => Promise<string>;
 
 export interface RetrievalWeights {
   similarity: number;
+  /** Weight for keyword (BM25-style) match. Set 0 to disable. */
+  keyword: number;
   recency: number;
   importance: number;
 }
@@ -37,6 +40,11 @@ export interface RetrievalConfig {
   candidateMultiplier?: number;
   recencyLambda?: number;
   weights?: Partial<RetrievalWeights>;
+  /**
+   * When set, results must clear this minimum score.
+   * Default: 0 (no filter).
+   */
+  minScore?: number;
 }
 
 export interface SummarisationConfig {
@@ -50,6 +58,20 @@ export interface SummarisationConfig {
 export interface EmbeddingConfig {
   embedFn?: EmbedFn;
   embedBatchFn?: EmbedBatchFn;
+  /**
+   * Optional in-memory embedding cache.
+   * If a `Map<string, number[]>` is provided, the engine will use it
+   * to skip re-embedding identical text within the same process.
+   */
+  cache?: EmbeddingCache;
+}
+
+/** Minimal interface for an embedding cache. */
+export interface EmbeddingCache {
+  get(text: string): number[] | undefined;
+  set(text: string, embedding: number[]): void;
+  clear(): void;
+  readonly size: number;
 }
 
 export interface AgentMemoryOptions {
@@ -58,6 +80,14 @@ export interface AgentMemoryOptions {
   retrieval?: RetrievalConfig;
   summarisation?: SummarisationConfig;
   defaultSessionId?: string;
+  defaultUserId?: string;
+  defaultAgentId?: string;
+  defaultTier?: MemoryTier;
+  /**
+   * If true, the engine logs lightweight debug messages (embed hits/misses,
+   * scoring breakdowns). Default: false.
+   */
+  debug?: boolean;
 }
 
 export interface RememberBaseInput {
@@ -67,6 +97,9 @@ export interface RememberBaseInput {
   importance?: number;
   embedding?: number[];
   metadata?: Record<string, unknown>;
+  tier?: MemoryTier;
+  userId?: string;
+  agentId?: string;
 }
 
 export interface RememberEntryInput extends RememberBaseInput {
@@ -90,12 +123,16 @@ export interface RecallOptions {
   minScore?: number;
   /** Optional predicate to filter candidates after scoring. */
   filter?: (item: MemoryItem) => boolean;
+  tiers?: MemoryTier[];
+  userId?: string;
+  agentId?: string;
 }
 
 export interface RecallResult {
   item: MemoryItem;
   score: number;
   similarity: number;
+  keyword: number;
   recency: number;
   importance: number;
 }
@@ -121,6 +158,9 @@ export interface WithMemoryRunOptions {
   sessionId?: string;
   topK?: number;
   importance?: number;
+  userId?: string;
+  agentId?: string;
+  tier?: MemoryTier;
 }
 
 export type AgentFunction<TOutput, TExtra extends unknown[] = []> = (
@@ -139,6 +179,9 @@ export interface WithMemoryOptions extends AgentMemoryOptions {
   };
   sessionId?: string;
   topK?: number;
+  userId?: string;
+  agentId?: string;
+  tier?: MemoryTier;
   autoStoreInput?: boolean;
   autoStoreOutput?: boolean;
   /**
@@ -147,6 +190,17 @@ export interface WithMemoryOptions extends AgentMemoryOptions {
    * the default bullet-list summary is stored which is rarely useful.
    */
   autoSummarise?: boolean;
+}
+
+export interface BatchRememberInput {
+  items: RememberInput[];
+  /** Concurrency limit for embedding calls. Default: 5. */
+  concurrency?: number;
+}
+
+export interface BatchRememberResult {
+  stored: Array<MemoryEntry | MemoryFact>;
+  errors: Array<{ index: number; error: Error }>;
 }
 
 // Re-export for adapter consumers
@@ -161,5 +215,6 @@ export type {
   MemoryMessage,
   MemoryRole,
   MemoryStats,
-  MemorySummary
+  MemorySummary,
+  MemoryTier
 };

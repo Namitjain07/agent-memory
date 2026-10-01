@@ -49,11 +49,17 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
     ...extra: TExtra
   ): Promise<TOutput> => {
     const sessionId = runOptions.sessionId ?? options.sessionId ?? "default";
+    const userId = runOptions.userId ?? options.userId;
+    const agentId = runOptions.agentId ?? options.agentId;
+    const tier = runOptions.tier ?? options.tier;
     const userMessage = lastUserMessage(messages);
     const importancePart =
       runOptions.importance !== undefined
         ? { importance: runOptions.importance }
         : {};
+    const tierPart = tier !== undefined ? { tier } : {};
+    const userIdPart = userId !== undefined ? { userId } : {};
+    const agentIdPart = agentId !== undefined ? { agentId } : {};
 
     // Guard: only store if content is non-empty
     if (options.autoStoreInput !== false && userMessage?.content?.trim()) {
@@ -61,14 +67,20 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
         role: "user",
         content: userMessage.content,
         sessionId,
-        ...importancePart
+        ...importancePart,
+        ...tierPart,
+        ...userIdPart,
+        ...agentIdPart
       });
     }
 
     const topKPart = runOptions.topK ?? options.topK;
     const injectedMessages = await memory.inject(messages, {
       sessionId,
-      ...(topKPart !== undefined ? { topK: topKPart } : {})
+      ...(topKPart !== undefined ? { topK: topKPart } : {}),
+      ...(userId !== undefined ? { userId } : {}),
+      ...(agentId !== undefined ? { agentId } : {}),
+      ...(tier !== undefined ? { tier } : {})
     });
     const output = await agentFn(injectedMessages, ...extra);
 
@@ -79,7 +91,10 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
           role: "assistant",
           content: outputText,
           sessionId,
-          ...importancePart
+          ...importancePart,
+          ...tierPart,
+          ...userIdPart,
+          ...agentIdPart
         });
       }
     }

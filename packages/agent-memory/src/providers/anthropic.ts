@@ -4,12 +4,16 @@
  */
 import type { SummariseFn } from "../types/config";
 import { buildSummaryPrompt, buildConversationText, fetchJSON, type MemoryProvider } from "./types";
+import type { RequestOptions } from "../utils/http";
+import { DEFAULT_RETRY_POLICY } from "../utils/http";
 
 export interface AnthropicProviderOptions {
   apiKey: string;
   /** Chat model. Defaults to `claude-3-5-haiku-20241022`. */
   model?: string;
   baseURL?: string;
+  /** Default per-request options: timeout, retry, abort signal. */
+  requestOptions?: RequestOptions;
 }
 
 interface AnthropicResponse {
@@ -44,6 +48,7 @@ export function anthropicProvider(options: AnthropicProviderOptions): MemoryProv
     "x-api-key": options.apiKey,
     "anthropic-version": "2023-06-01"
   };
+  const requestOptions = options.requestOptions;
 
   const summarise: SummariseFn = async ({ entries }) => {
     const res = await fetchJSON<AnthropicResponse>(
@@ -53,7 +58,12 @@ export function anthropicProvider(options: AnthropicProviderOptions): MemoryProv
         max_tokens: 512,
         messages: [{ role: "user", content: buildSummaryPrompt(entries) }]
       },
-      headers
+      headers,
+      {
+        ...DEFAULT_RETRY_POLICY,
+        ...(requestOptions ?? {}),
+        context: "anthropic summarise"
+      }
     );
     const text = res.content.find((c) => c.type === "text")?.text;
     return text?.trim() ?? buildConversationText(entries);
@@ -61,13 +71,23 @@ export function anthropicProvider(options: AnthropicProviderOptions): MemoryProv
 
   // No-op embed fns — Anthropic has no embeddings API.
   // Recall will work via recency + importance when no real vectors are present.
-  const noopEmbed = async (_text: string): Promise<number[]> => [];
-  const noopBatch = async (texts: string[]): Promise<number[][]> => texts.map(() => []);
+  const noopEmbed = async (_text: string): Promise<number[]> => {
+    throw new Error(
+      "[agent-memory] anthropicProvider does not support embeddings. Pair with another provider's embedFn."
+    );
+  };
+  const noopBatch = async (texts: string[]): Promise<number[][]> => {
+    throw new Error(
+      "[agent-memory] anthropicProvider does not support embeddings. Pair with another provider's embedFn."
+    );
+  };
 
-  return {
+  const provider: MemoryProvider = {
     name: "anthropic",
     embedFn: noopEmbed,
     embedBatchFn: noopBatch,
     summarise
   };
+  if (requestOptions) provider.defaultRequestOptions = requestOptions;
+  return provider;
 }

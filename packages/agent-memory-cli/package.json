@@ -1,0 +1,62 @@
+{
+  "name": "@namitjain.india/agent-memory-cli",
+  "version": "0.1.0",
+  "description": "CLI for inspecting, searching, and managing agent-memory stores",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namitjain07/agent-memory.git"
+  },
+  "homepage": "https://github.com/Namitjain07/agent-memory#readme",
+  "bugs": {
+    "url": "https://github.com/Namitjain07/agent-memory/issues"
+  },
+  "keywords": [
+    "ai",
+    "memory",
+    "agent",
+    "cli",
+    "debug",
+    "inspect",
+    "tooling"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agent-memory": "./bin/agent-memory.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@namitjain.india/agent-memory": "^0.4.0-beta.1",
+    "@namitjain.india/agent-memory-sqlite": "^0.3.0",
+    "vitest": "^5.0.3"
+  }
+}
