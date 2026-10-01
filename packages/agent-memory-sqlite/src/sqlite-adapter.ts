@@ -69,7 +69,7 @@ export class SQLiteAdapter implements MemoryAdapter {
 
   async add(item: MemoryItem): Promise<void> {
     const stmt = this.db.prepare(
-      `INSERT INTO ${this.tableName} (
+      `INSERT OR REPLACE INTO ${this.tableName} (
         id, kind, session_id, tier, user_id, agent_id, timestamp, importance,
         role, content, key_name, value_text, embedding, metadata,
         from_timestamp, to_timestamp, replaced_entry_ids

@@ -131,11 +131,10 @@ describe("spreadActivation", () => {
 
   it("returns no spread activation for unknown/isolated seed node", () => {
     const result = spreadActivation(new Map(), new Map([["x", 1]]), 2, 0.5);
-    // Seed "x" has no neighbours in empty graph — no activation propagates to anyone
-    // The result may contain "x" at 0 (seed subtracted), but no other nodes
-    for (const [id, val] of result) {
-      if (id !== "x") expect(val).toBe(0);
-    }
+    // Seed "x" has no neighbours in empty graph — no activation propagates to anyone.
+    // After seed subtraction, "x" itself has zero activation. No other nodes exist.
+    expect(result.size).toBe(1);
+    expect(result.get("x")).toBe(0);
   });
 });
 

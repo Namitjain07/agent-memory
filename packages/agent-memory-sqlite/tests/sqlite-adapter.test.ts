@@ -125,4 +125,29 @@ describe("SQLiteAdapter", () => {
     const items = await memory.getBySession("s8");
     expect(items.some((i) => i.kind === "summary")).toBe(true);
   });
+
+  it("handles duplicate-id insertion (INSERT OR REPLACE)", async () => {
+    const adapter = new SQLiteAdapter({ dbPath: ":memory:" });
+    const mem = new AgentMemory({ adapter });
+    const item = await mem.remember({
+      kind: "fact",
+      sessionId: "s-dup",
+      key: "lang",
+      value: "TypeScript",
+      importance: 0.5
+    });
+    // Re-insert with the same id (should NOT throw)
+    await mem.remember({
+      id: item.id,
+      kind: "fact",
+      sessionId: "s-dup",
+      key: "lang",
+      value: "TypeScript (updated)",
+      importance: 0.8
+    });
+    const all = await mem.getBySession("s-dup");
+    expect(all).toHaveLength(1);
+    const found = all.find((i) => i.id === item.id);
+    expect(found?.kind === "fact" ? found.value : "").toBe("TypeScript (updated)");
+  });
 });

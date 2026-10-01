@@ -16,7 +16,7 @@ import {
   isMemoryError
 } from "../src/utils/errors";
 import { fetchJSON, DEFAULT_RETRY_POLICY } from "../src/utils/http";
-import { encrypt, decrypt, generateKey, keyFromPassphrase } from "../src/utils/encryption";
+import { encrypt, decrypt, generateKey, keyFromPassphrase, envelopeFromString } from "../src/utils/encryption";
 import type { MemoryItem, MemoryEntry, MemoryFact } from "../src/types/memory";
 
 // ─── LRU ─────────────────────────────────────────────────────────────────────
@@ -349,6 +349,17 @@ describe("encryption", () => {
     const key = generateKey();
     expect(() =>
       decrypt({ v: 99 as never, alg: "aes-256-gcm", iv: "x", tag: "x", ct: "x" }, key)
-    ).toThrow(/unsupported envelope/);
+    ).toThrow(/invalid envelope/);
+  });
+
+  it("rejects envelope missing required fields", () => {
+    const key = generateKey();
+    expect(() => decrypt({} as never, key)).toThrow(/invalid envelope/);
+    expect(() => decrypt({ v: 1, alg: "aes-256-gcm" } as never, key)).toThrow(/invalid envelope/);
+  });
+
+  it("envelopeFromString validates shape", () => {
+    expect(() => envelopeFromString("{}")).toThrow(/valid EncryptedEnvelope/);
+    expect(() => envelopeFromString("not json")).toThrow();
   });
 });

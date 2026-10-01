@@ -24,6 +24,7 @@ export interface UseMemoryResult {
   setMessages: Dispatch<SetStateAction<MemoryMessage[]>>;
   isLoading: boolean;
   error: Error | null;
+  clearError: () => void;
   remember: (input: Omit<RememberInput, "sessionId">) => Promise<MemoryItem>;
   recall: (query: string, options?: Omit<RecallOptions, "sessionId">) => Promise<RecallResult[]>;
   forget: (id: string) => Promise<void>;
@@ -146,6 +147,8 @@ export function useMemory(
     [memory, sessionId, wrapAsync]
   );
 
+  const clearError = useCallback(() => setError(null), []);
+
   const stats = useCallback(
     () => wrapAsync(() => memory.stats(sessionId)),
     [memory, sessionId, wrapAsync]
@@ -156,6 +159,7 @@ export function useMemory(
     setMessages,
     isLoading,
     error,
+    clearError,
     remember,
     recall,
     forget,

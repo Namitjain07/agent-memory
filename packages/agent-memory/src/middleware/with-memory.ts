@@ -6,20 +6,72 @@ import type {
 } from "../types/config";
 import type { MemoryMessage } from "../types/memory";
 
+/**
+ * Try hard to extract a textual representation from any plausible LLM response.
+ * Handles:
+ *   - plain strings
+ *   - `{ content: string }` (Anthropic, custom)
+ *   - `{ choices: [{ message: { content: string } }] }` (OpenAI)
+ *   - `{ content: Array<{ type: "text", text: string } | ...> }` (Anthropic parts)
+ *   - `{ output_text: string }` (Responses API)
+ *
+ * Returns `null` if no text is found (e.g. tool-only / audio-only responses).
+ */
 function extractOutputText(output: unknown): string | null {
+  if (output == null) return null;
+
   if (typeof output === "string") {
     return output.trim() || null;
   }
 
-  if (
-    output &&
-    typeof output === "object" &&
-    "content" in output &&
-    typeof (output as { content?: unknown }).content === "string"
-  ) {
-    const content = (output as { content: string }).content.trim();
-    return content || null;
+  if (typeof output !== "object") return null;
+  const o = output as Record<string, unknown>;
+
+  // OpenAI Chat Completions: { choices: [{ message: { content } }] }
+  const choices = o.choices;
+  if (Array.isArray(choices) && choices.length > 0) {
+    const first = choices[0] as { message?: { content?: unknown } } | undefined;
+    const content = first?.message?.content;
+    if (typeof content === "string" && content.trim()) return content.trim();
+    if (Array.isArray(content)) {
+      const text = content
+        .map((c) => (typeof c === "object" && c && "text" in c ? String((c as { text: unknown }).text) : ""))
+        .join("")
+        .trim();
+      if (text) return text;
+    }
   }
+
+  // OpenAI Responses API: { output_text: string } or { output: [{ content: [{ text }] }] }
+  if (typeof o.output_text === "string" && o.output_text.trim()) return o.output_text.trim();
+  if (Array.isArray(o.output)) {
+    const text = (o.output as unknown[])
+      .flatMap((item) => {
+        if (item && typeof item === "object") {
+          const content = (item as { content?: unknown }).content;
+          if (Array.isArray(content)) return content;
+        }
+        return [];
+      })
+      .map((c) => (typeof c === "object" && c && "text" in c ? String((c as { text: unknown }).text) : ""))
+      .join("")
+      .trim();
+    if (text) return text;
+  }
+
+  // Generic: { content: string | Array<{ text: string }> }
+  const content = o.content;
+  if (typeof content === "string" && content.trim()) return content.trim();
+  if (Array.isArray(content)) {
+    const text = content
+      .map((c) => (typeof c === "object" && c && "text" in c ? String((c as { text: unknown }).text) : ""))
+      .join("")
+      .trim();
+    if (text) return text;
+  }
+
+  // Vercel AI SDK generateText result: { text: string }
+  if (typeof o.text === "string" && o.text.trim()) return o.text.trim();
 
   return null;
 }
@@ -87,11 +139,17 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
     if (options.autoStoreOutput !== false) {
       const outputText = extractOutputText(output);
       if (outputText) {
+        // Assistant turns default to a lower importance than user turns
+        // unless the caller explicitly set an importance on the run options.
+        const assistantImportance =
+          runOptions.importance !== undefined
+            ? importancePart
+            : { importance: 0.3 };
         await memory.remember({
           role: "assistant",
           content: outputText,
           sessionId,
-          ...importancePart,
+          ...assistantImportance,
           ...tierPart,
           ...userIdPart,
           ...agentIdPart

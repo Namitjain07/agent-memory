@@ -44,6 +44,18 @@ const VERSION = 1 as const;
 const ALG = "aes-256-gcm" as const;
 const SCRYPT_SALT = "agent-memory:v1:encryption"; // Static salt — caller can override for production
 
+function isEncryptedEnvelope(value: unknown): value is EncryptedEnvelope {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    v.v === VERSION &&
+    v.alg === ALG &&
+    typeof v.iv === "string" &&
+    typeof v.tag === "string" &&
+    typeof v.ct === "string"
+  );
+}
+
 /** Generate a fresh 32-byte AES-256 key. */
 export function generateKey(): Buffer {
   return randomBytes(32);
@@ -87,10 +99,10 @@ export function encrypt(plaintext: string, key: Buffer | string): EncryptedEnvel
   };
 }
 
-/** Decrypt an envelope back to a UTF-8 string. Throws on tampering. */
-export function decrypt(envelope: EncryptedEnvelope, key: Buffer | string): string {
-  if (envelope.v !== VERSION || envelope.alg !== ALG) {
-    throw new Error(`[agent-memory] unsupported envelope (v=${envelope.v}, alg=${envelope.alg})`);
+/** Decrypt an envelope back to a UTF-8 string. Throws on tampering or invalid shape. */
+export function decrypt(envelope: unknown, key: Buffer | string): string {
+  if (!isEncryptedEnvelope(envelope)) {
+    throw new Error(`[agent-memory] invalid envelope shape (v=${(envelope as { v?: unknown })?.v}, alg=${(envelope as { alg?: unknown })?.alg})`);
   }
   const keyBuf = ensureKey(key);
   const iv = Buffer.from(envelope.iv, "base64");
@@ -107,8 +119,11 @@ export function envelopeToString(envelope: EncryptedEnvelope): string {
   return JSON.stringify(envelope);
 }
 
-/** Helper: parse a previously serialised envelope back into the typed object. */
+/** Helper: parse a previously serialised envelope back into the typed object. Throws on invalid shape. */
 export function envelopeFromString(serialised: string): EncryptedEnvelope {
-  const parsed = JSON.parse(serialised) as EncryptedEnvelope;
+  const parsed = JSON.parse(serialised) as unknown;
+  if (!isEncryptedEnvelope(parsed)) {
+    throw new Error("[agent-memory] envelopeFromString: input is not a valid EncryptedEnvelope");
+  }
   return parsed;
 }
