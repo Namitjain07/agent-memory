@@ -15,9 +15,7 @@ import type { AdjacencyList, GraphNode } from "../src/graph/types";
 
 // ─── Algorithm unit tests ─────────────────────────────────────────────────────
 
-function makeGraph(
-  nodes: { id: string; neighbours: { id: string; weight: number }[] }[]
-): AdjacencyList {
+function makeGraph(nodes: { id: string; neighbours: { id: string; weight: number }[] }[]): AdjacencyList {
   const graph = new Map<string, GraphNode>();
   for (const n of nodes) {
     graph.set(n.id, {
@@ -53,7 +51,11 @@ describe("cosineSimilarityGraph", () => {
 
 describe("normalizeMap", () => {
   it("scales max to 1", () => {
-    const m = new Map([["a", 0], ["b", 2], ["c", 4]]);
+    const m = new Map([
+      ["a", 0],
+      ["b", 2],
+      ["c", 4]
+    ]);
     const n = normalizeMap(m);
     expect(n.get("c")).toBeCloseTo(1);
     expect(n.get("b")).toBeCloseTo(0.5);
@@ -68,7 +70,13 @@ describe("computePageRank", () => {
 
   it("all nodes sum to 1 approximately", () => {
     const g = makeGraph([
-      { id: "a", neighbours: [{ id: "b", weight: 1 }, { id: "c", weight: 0.5 }] },
+      {
+        id: "a",
+        neighbours: [
+          { id: "b", weight: 1 },
+          { id: "c", weight: 0.5 }
+        ]
+      },
       { id: "b", neighbours: [{ id: "a", weight: 1 }] },
       { id: "c", neighbours: [{ id: "a", weight: 0.8 }] }
     ]);
@@ -80,7 +88,14 @@ describe("computePageRank", () => {
   it("hub node gets higher PageRank than leaf nodes", () => {
     // Star graph: center A connected to B, C, D
     const g = makeGraph([
-      { id: "A", neighbours: [{ id: "B", weight: 1 }, { id: "C", weight: 1 }, { id: "D", weight: 1 }] },
+      {
+        id: "A",
+        neighbours: [
+          { id: "B", weight: 1 },
+          { id: "C", weight: 1 },
+          { id: "D", weight: 1 }
+        ]
+      },
       { id: "B", neighbours: [{ id: "A", weight: 1 }] },
       { id: "C", neighbours: [{ id: "A", weight: 1 }] },
       { id: "D", neighbours: [{ id: "A", weight: 1 }] }
@@ -120,13 +135,19 @@ describe("spreadActivation", () => {
   it("deeper nodes get less activation", () => {
     const g = makeGraph([
       { id: "A", neighbours: [{ id: "B", weight: 1 }] },
-      { id: "B", neighbours: [{ id: "A", weight: 1 }, { id: "C", weight: 1 }] },
+      {
+        id: "B",
+        neighbours: [
+          { id: "A", weight: 1 },
+          { id: "C", weight: 1 }
+        ]
+      },
       { id: "C", neighbours: [{ id: "B", weight: 1 }] }
     ]);
     const seeds = new Map([["A", 1.0]]);
     const result = spreadActivation(g, seeds, 3, 0.5);
     // B is 1 hop away, C is 2 hops away
-    expect((result.get("B") ?? 0)).toBeGreaterThanOrEqual(result.get("C") ?? 0);
+    expect(result.get("B") ?? 0).toBeGreaterThanOrEqual(result.get("C") ?? 0);
   });
 
   it("returns no spread activation for unknown/isolated seed node", () => {
@@ -161,9 +182,27 @@ describe("detectClusters", () => {
 
   it("fully connected graph is one cluster", () => {
     const g = makeGraph([
-      { id: "X", neighbours: [{ id: "Y", weight: 0.95 }, { id: "Z", weight: 0.95 }] },
-      { id: "Y", neighbours: [{ id: "X", weight: 0.95 }, { id: "Z", weight: 0.95 }] },
-      { id: "Z", neighbours: [{ id: "X", weight: 0.95 }, { id: "Y", weight: 0.95 }] }
+      {
+        id: "X",
+        neighbours: [
+          { id: "Y", weight: 0.95 },
+          { id: "Z", weight: 0.95 }
+        ]
+      },
+      {
+        id: "Y",
+        neighbours: [
+          { id: "X", weight: 0.95 },
+          { id: "Z", weight: 0.95 }
+        ]
+      },
+      {
+        id: "Z",
+        neighbours: [
+          { id: "X", weight: 0.95 },
+          { id: "Y", weight: 0.95 }
+        ]
+      }
     ]);
     const assignment = detectClusters(g, 0.7);
     const ids = new Set(assignment.values());
@@ -175,11 +214,21 @@ describe("findBridgeNodes", () => {
   it("identifies node that connects two clusters", () => {
     const g = makeGraph([
       { id: "A", neighbours: [{ id: "bridge", weight: 0.9 }] },
-      { id: "bridge", neighbours: [{ id: "A", weight: 0.9 }, { id: "B", weight: 0.9 }] },
+      {
+        id: "bridge",
+        neighbours: [
+          { id: "A", weight: 0.9 },
+          { id: "B", weight: 0.9 }
+        ]
+      },
       { id: "B", neighbours: [{ id: "bridge", weight: 0.9 }] }
     ]);
     // Manually assign clusters: A=0, bridge=0, B=1 (simulating two clusters)
-    const assignment = new Map([["A", 0], ["bridge", 0], ["B", 1]]);
+    const assignment = new Map([
+      ["A", 0],
+      ["bridge", 0],
+      ["B", 1]
+    ]);
     const bridges = findBridgeNodes(g, assignment);
     expect(bridges.has("bridge")).toBe(true);
     expect(bridges.get("bridge")!.clusters.has(1)).toBe(true);

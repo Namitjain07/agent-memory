@@ -24,7 +24,7 @@ function syntheticEmbed(text: string): number[] {
   }
   for (let i = 0; i < 64; i += 1) {
     h = (h * 1103515245 + 12345) >>> 0;
-    out[i] = (h / 0xffffffff) - 0.5;
+    out[i] = h / 0xffffffff - 0.5;
   }
   return out;
 }

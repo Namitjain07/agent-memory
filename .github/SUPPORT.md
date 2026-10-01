@@ -7,6 +7,7 @@ If you need help with agent-memory, here are the best places to ask:
 👉 [GitHub Discussions → Q&A](https://github.com/Namitjain07/agent-memory/discussions/categories/q-a)
 
 Use Discussions for:
+
 - "How do I configure X?"
 - "Best practice for Y?"
 - Architecture and design questions
@@ -17,6 +18,7 @@ Use Discussions for:
 👉 [GitHub Issues](https://github.com/Namitjain07/agent-memory/issues)
 
 Use Issues for:
+
 - Confirmed bugs (with a minimal reproduction)
 - Concrete feature requests
 - Documentation problems

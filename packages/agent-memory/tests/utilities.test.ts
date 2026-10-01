@@ -16,7 +16,14 @@ import {
   isMemoryError
 } from "../src/utils/errors";
 import { fetchJSON, DEFAULT_RETRY_POLICY } from "../src/utils/http";
-import { encrypt, decrypt, generateKey, keyFromPassphrase, envelopeFromString } from "../src/utils/encryption";
+import {
+  encrypt,
+  decrypt,
+  generateKey,
+  generateSalt,
+  keyFromPassphrase,
+  envelopeFromString
+} from "../src/utils/encryption";
 import type { MemoryItem, MemoryEntry, MemoryFact } from "../src/types/memory";
 
 // ─── LRU ─────────────────────────────────────────────────────────────────────
@@ -97,9 +104,34 @@ describe("PII redaction", () => {
 
 describe("BM25", () => {
   const items: MemoryItem[] = [
-    { id: "1", kind: "entry", sessionId: "s", role: "user", content: "I love TypeScript and React", timestamp: 1, importance: 0.5 } as MemoryEntry,
-    { id: "2", kind: "entry", sessionId: "s", role: "user", content: "Python is great too", timestamp: 2, importance: 0.5 } as MemoryEntry,
-    { id: "3", kind: "fact", sessionId: "s", key: "name", value: "Alice", content: "name: Alice", timestamp: 3, importance: 0.5 } as MemoryFact
+    {
+      id: "1",
+      kind: "entry",
+      sessionId: "s",
+      role: "user",
+      content: "I love TypeScript and React",
+      timestamp: 1,
+      importance: 0.5
+    } as MemoryEntry,
+    {
+      id: "2",
+      kind: "entry",
+      sessionId: "s",
+      role: "user",
+      content: "Python is great too",
+      timestamp: 2,
+      importance: 0.5
+    } as MemoryEntry,
+    {
+      id: "3",
+      kind: "fact",
+      sessionId: "s",
+      key: "name",
+      value: "Alice",
+      content: "name: Alice",
+      timestamp: 3,
+      importance: 0.5
+    } as MemoryFact
   ];
 
   it("tokenises lowercase words", () => {
@@ -187,10 +219,7 @@ describe("memory-ops", () => {
   });
 
   it("merges near-duplicate facts into a single item", () => {
-    const items = [
-      factWith("a", [1, 0, 0], "TypeScript", 1),
-      factWith("b", [1, 0.001, 0], "TypeScript", 2)
-    ];
+    const items = [factWith("a", [1, 0, 0], "TypeScript", 1), factWith("b", [1, 0.001, 0], "TypeScript", 2)];
     const merged = mergeSimilarEntries(items, { threshold: 0.95 });
     expect(merged.length).toBe(1);
     const first = merged[0]!;
@@ -202,7 +231,16 @@ describe("memory-ops", () => {
 
   it("keeps items with no embedding", () => {
     const items: MemoryItem[] = [
-      { id: "a", kind: "fact", sessionId: "s", key: "k", value: "v", content: "k: v", timestamp: 1, importance: 0.5 }
+      {
+        id: "a",
+        kind: "fact",
+        sessionId: "s",
+        key: "k",
+        value: "v",
+        content: "k: v",
+        timestamp: 1,
+        importance: 0.5
+      }
     ];
     const deduped = deduplicateSimilarFacts(items);
     expect(deduped.length).toBe(1);
@@ -244,13 +282,28 @@ describe("fetchJSON with retry/timeout/AbortSignal", () => {
       if (calls === 1) {
         return new Response("Service Unavailable", { status: 503 });
       }
-      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).fetch = fetchMock;
-    const result = await fetchJSON<{ ok: boolean }>("https://example.com", { a: 1 }, {}, {
-      retry: { maxAttempts: 3, initialDelayMs: 1, maxDelayMs: 5, backoffMultiplier: 1, jitter: false, retryableStatuses: [503] }
-    });
+    const result = await fetchJSON<{ ok: boolean }>(
+      "https://example.com",
+      { a: 1 },
+      {},
+      {
+        retry: {
+          maxAttempts: 3,
+          initialDelayMs: 1,
+          maxDelayMs: 5,
+          backoffMultiplier: 1,
+          jitter: false,
+          retryableStatuses: [503]
+        }
+      }
+    );
     expect(result.ok).toBe(true);
     expect(calls).toBe(2);
   });
@@ -264,9 +317,21 @@ describe("fetchJSON with retry/timeout/AbortSignal", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (globalThis as any).fetch = fetchMock;
     await expect(
-      fetchJSON("https://example.com", {}, {}, {
-        retry: { maxAttempts: 3, initialDelayMs: 1, maxDelayMs: 5, backoffMultiplier: 1, jitter: false, retryableStatuses: [503] }
-      })
+      fetchJSON(
+        "https://example.com",
+        {},
+        {},
+        {
+          retry: {
+            maxAttempts: 3,
+            initialDelayMs: 1,
+            maxDelayMs: 5,
+            backoffMultiplier: 1,
+            jitter: false,
+            retryableStatuses: [503]
+          }
+        }
+      )
     ).rejects.toThrow(/HTTP 400/);
     expect(calls).toBe(1);
   });
@@ -329,12 +394,25 @@ describe("encryption", () => {
     expect(() => decrypt(envelope, generateKey())).toThrow();
   });
 
-  it("derives key from passphrase", () => {
-    const key1 = keyFromPassphrase("correct horse battery staple");
-    const key2 = keyFromPassphrase("correct horse battery staple");
+  it("derives key from passphrase with a per-user salt", () => {
+    const salt = generateSalt();
+    const key1 = keyFromPassphrase("correct horse battery staple", salt);
+    const key2 = keyFromPassphrase("correct horse battery staple", salt);
     expect(key1.equals(key2)).toBe(true);
     const envelope = encrypt("hi", key1);
     expect(decrypt(envelope, key2)).toBe("hi");
+  });
+
+  it("produces different keys for the same passphrase with different salts", () => {
+    const salt1 = generateSalt();
+    const salt2 = generateSalt();
+    const key1 = keyFromPassphrase("same passphrase", salt1);
+    const key2 = keyFromPassphrase("same passphrase", salt2);
+    expect(key1.equals(key2)).toBe(false);
+  });
+
+  it("rejects short salt", () => {
+    expect(() => keyFromPassphrase("pass", Buffer.alloc(8))).toThrow(/salt/);
   });
 
   it("rejects wrong-sized key", () => {
@@ -342,14 +420,14 @@ describe("encryption", () => {
   });
 
   it("rejects empty passphrase", () => {
-    expect(() => keyFromPassphrase("")).toThrow(/non-empty/);
+    expect(() => keyFromPassphrase("", generateSalt())).toThrow(/non-empty/);
   });
 
   it("rejects unsupported envelope version", () => {
     const key = generateKey();
-    expect(() =>
-      decrypt({ v: 99 as never, alg: "aes-256-gcm", iv: "x", tag: "x", ct: "x" }, key)
-    ).toThrow(/invalid envelope/);
+    expect(() => decrypt({ v: 99 as never, alg: "aes-256-gcm", iv: "x", tag: "x", ct: "x" }, key)).toThrow(
+      /invalid envelope/
+    );
   });
 
   it("rejects envelope missing required fields", () => {

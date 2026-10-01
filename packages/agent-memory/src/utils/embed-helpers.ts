@@ -7,10 +7,7 @@ import type { EmbedBatchFn, EmbedFn } from "../types/config";
  * @example
  * const batchEmbed = createBatchEmbedFn(myEmbedFn, 20);
  */
-export function createBatchEmbedFn(
-  embedFn: EmbedFn,
-  batchSize: number = 20
-): EmbedBatchFn {
+export function createBatchEmbedFn(embedFn: EmbedFn, batchSize: number = 20): EmbedBatchFn {
   return async (texts: string[]): Promise<number[][]> => {
     const results: number[][] = [];
     for (let i = 0; i < texts.length; i += batchSize) {

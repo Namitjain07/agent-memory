@@ -4,21 +4,21 @@ If you're picking a long-term memory layer for an LLM agent, this table helps yo
 
 ## At a glance
 
-| Feature | agent-memory | mem0 | LangChain Memory | LlamaIndex Memory |
-|---|---|---|---|---|
-| Zero runtime deps in core | ✅ | ❌ | ❌ | ❌ |
-| Multi-tier scoping (user / agent / session) | ✅ | ✅ | partial | partial |
-| Hybrid vector + keyword scoring | ✅ (BM25 + cosine + recency + importance) | ❌ (vector only) | ❌ | ❌ |
-| Built-in encryption | ✅ (AES-256-GCM) | ❌ (BYO) | ❌ | ❌ |
-| PII redaction | ✅ | ❌ (BYO) | ❌ | ❌ |
-| AbortSignal / timeout / retry | ✅ | ❌ | ❌ | ❌ |
-| React hook | ✅ | ✅ | ✅ | ❌ |
-| Vercel AI SDK integration | ✅ | ✅ | ✅ | ❌ |
-| SQLite adapter | ✅ | ❌ (cloud only) | ✅ | ❌ |
-| pgvector adapter | ✅ | ✅ | ✅ | ✅ |
-| CLI | ✅ | ❌ | ❌ | ❌ |
-| License | MIT | Apache-2.0 | MIT | MIT |
-| Requires account / cloud | ❌ | Optional (mem0 cloud) | ❌ | ❌ |
+| Feature                                     | agent-memory                              | mem0                  | LangChain Memory | LlamaIndex Memory |
+| ------------------------------------------- | ----------------------------------------- | --------------------- | ---------------- | ----------------- |
+| Zero runtime deps in core                   | ✅                                        | ❌                    | ❌               | ❌                |
+| Multi-tier scoping (user / agent / session) | ✅                                        | ✅                    | partial          | partial           |
+| Hybrid vector + keyword scoring             | ✅ (BM25 + cosine + recency + importance) | ❌ (vector only)      | ❌               | ❌                |
+| Built-in encryption                         | ✅ (AES-256-GCM)                          | ❌ (BYO)              | ❌               | ❌                |
+| PII redaction                               | ✅                                        | ❌ (BYO)              | ❌               | ❌                |
+| AbortSignal / timeout / retry               | ✅                                        | ❌                    | ❌               | ❌                |
+| React hook                                  | ✅                                        | ✅                    | ✅               | ❌                |
+| Vercel AI SDK integration                   | ✅                                        | ✅                    | ✅               | ❌                |
+| SQLite adapter                              | ✅                                        | ❌ (cloud only)       | ✅               | ❌                |
+| pgvector adapter                            | ✅                                        | ✅                    | ✅               | ✅                |
+| CLI                                         | ✅                                        | ❌                    | ❌               | ❌                |
+| License                                     | MIT                                       | Apache-2.0            | MIT              | MIT               |
+| Requires account / cloud                    | ❌                                        | Optional (mem0 cloud) | ❌               | ❌                |
 
 ## When to pick `agent-memory`
 
@@ -34,7 +34,7 @@ If you're picking a long-term memory layer for an LLM agent, this table helps yo
 - **mem0**: if you want a managed cloud service, or if you want their [research-backed memory scoring](https://mem0.ai/research) out of the box.
 - **LangChain Memory**: if you're already deep in the LangChain ecosystem and need their chat history abstractions.
 - **LlamaIndex**: if you're building a RAG-heavy app and want their index/query engine abstractions.
-- **Chroma / Pinecone / Weaviate**: if you need a *standalone* vector database and will build the memory layer yourself.
+- **Chroma / Pinecone / Weaviate**: if you need a _standalone_ vector database and will build the memory layer yourself.
 
 ## Benchmark notes
 

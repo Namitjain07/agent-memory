@@ -40,17 +40,17 @@ agent-memory --db ./memory.db --format json export > memory.json
 
 ## Commands
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `list` | `ls` | List all memory items (optionally `--session`) |
-| `search <query>` | `s` | Keyword search across content, key, value |
-| `show <id>` | | Show full details for a memory item |
-| `stats` | | Aggregate counts by kind, tier, and session |
-| `forget <id>` | `rm` | Show how to delete a memory item |
-| `clear` | | Show how to clear a session (requires `--session`) |
-| `export` | | Export items as JSON (without embeddings) |
-| `help` | `-h`, `--help` | Print help |
-| `version` | `-v`, `--version` | Print version |
+| Command          | Alias             | Description                                        |
+| ---------------- | ----------------- | -------------------------------------------------- |
+| `list`           | `ls`              | List all memory items (optionally `--session`)     |
+| `search <query>` | `s`               | Keyword search across content, key, value          |
+| `show <id>`      |                   | Show full details for a memory item                |
+| `stats`          |                   | Aggregate counts by kind, tier, and session        |
+| `forget <id>`    | `rm`              | Show how to delete a memory item                   |
+| `clear`          |                   | Show how to clear a session (requires `--session`) |
+| `export`         |                   | Export items as JSON (without embeddings)          |
+| `help`           | `-h`, `--help`    | Print help                                         |
+| `version`        | `-v`, `--version` | Print version                                      |
 
 ## Output formats
 

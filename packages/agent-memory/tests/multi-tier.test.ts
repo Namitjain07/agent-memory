@@ -26,8 +26,22 @@ describe("AgentMemory — multi-tier memory", () => {
 
   it("filters recall by userId", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    await memory.remember({ kind: "fact", sessionId: "s1", key: "a", value: "TypeScript", tier: "user", userId: "u1" });
-    await memory.remember({ kind: "fact", sessionId: "s1", key: "a", value: "Python", tier: "user", userId: "u2" });
+    await memory.remember({
+      kind: "fact",
+      sessionId: "s1",
+      key: "a",
+      value: "TypeScript",
+      tier: "user",
+      userId: "u1"
+    });
+    await memory.remember({
+      kind: "fact",
+      sessionId: "s1",
+      key: "a",
+      value: "Python",
+      tier: "user",
+      userId: "u2"
+    });
 
     const u1 = await memory.recall("language", { userId: "u1", sessionId: "s1", topK: 5 });
     expect(u1).toHaveLength(1);
@@ -36,8 +50,21 @@ describe("AgentMemory — multi-tier memory", () => {
 
   it("filters recall by tier", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    await memory.remember({ kind: "fact", sessionId: "s1", key: "x", value: "TypeScript", tier: "user", userId: "u1" });
-    await memory.remember({ role: "user", content: "TypeScript is great", sessionId: "s1", tier: "agent", agentId: "a1" });
+    await memory.remember({
+      kind: "fact",
+      sessionId: "s1",
+      key: "x",
+      value: "TypeScript",
+      tier: "user",
+      userId: "u1"
+    });
+    await memory.remember({
+      role: "user",
+      content: "TypeScript is great",
+      sessionId: "s1",
+      tier: "agent",
+      agentId: "a1"
+    });
     await memory.remember({ role: "user", content: "TypeScript rocks", sessionId: "s1" });
 
     const onlyUser = await memory.recall("TypeScript", { sessionId: "s1", topK: 10, tiers: ["user"] });
@@ -46,8 +73,22 @@ describe("AgentMemory — multi-tier memory", () => {
 
   it("stats reports byTier, userIds, agentIds", async () => {
     const memory = new AgentMemory();
-    await memory.remember({ kind: "fact", sessionId: "s1", key: "a", value: "x", tier: "user", userId: "u1" });
-    await memory.remember({ kind: "fact", sessionId: "s1", key: "b", value: "y", tier: "agent", agentId: "a1" });
+    await memory.remember({
+      kind: "fact",
+      sessionId: "s1",
+      key: "a",
+      value: "x",
+      tier: "user",
+      userId: "u1"
+    });
+    await memory.remember({
+      kind: "fact",
+      sessionId: "s1",
+      key: "b",
+      value: "y",
+      tier: "agent",
+      agentId: "a1"
+    });
     await memory.remember({ role: "user", content: "hi", sessionId: "s1" });
 
     const stats = await memory.stats("s1");
@@ -108,18 +149,17 @@ describe("AgentMemory — rememberBatch", () => {
 
 describe("AgentMemory — error wrapping", () => {
   it("wraps adapter delete errors as StorageError", async () => {
-    const memory = new AgentMemory();
-    const badAdapter: typeof memory extends never ? never : Parameters<typeof AgentMemory>[0] extends infer O ? O extends { adapter?: infer A } ? A : never : never = {
+    const badAdapter = {
       add: async () => {},
-      search: async () => [],
+      search: async () => [] as never[],
       delete: async () => {
         throw new Error("boom");
       },
       update: async () => {},
-      getBySession: async () => []
+      getBySession: async () => [] as never[]
     };
-    const m2 = new AgentMemory({ adapter: badAdapter });
-    await expect(m2.forget("x")).rejects.toThrow(/boom/);
+    const m = new AgentMemory({ adapter: badAdapter as any });
+    await expect(m.forget("x")).rejects.toThrow(/boom/);
   });
 
   it("ConfigurationError on remember with empty content", async () => {

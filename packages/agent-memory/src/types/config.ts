@@ -1,8 +1,4 @@
-import type {
-  MemoryAdapter,
-  MemorySearchOptions,
-  MemoryUpdate
-} from "./adapter";
+import type { MemoryAdapter, MemorySearchOptions, MemoryUpdate } from "./adapter";
 import type {
   MemoryEntry,
   MemoryFact,
@@ -171,10 +167,7 @@ export type AgentFunction<TOutput, TExtra extends unknown[] = []> = (
 export interface WithMemoryOptions extends AgentMemoryOptions {
   memory?: {
     remember: (input: RememberInput) => Promise<MemoryEntry | MemoryFact>;
-    inject: (
-      messages: MemoryMessage[],
-      options?: InjectOptions
-    ) => Promise<MemoryMessage[]>;
+    inject: (messages: MemoryMessage[], options?: InjectOptions) => Promise<MemoryMessage[]>;
     summarise: (options?: SummariseOptions) => Promise<MemorySummary | null>;
   };
   sessionId?: string;

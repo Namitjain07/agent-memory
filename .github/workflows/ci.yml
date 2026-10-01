@@ -9,25 +9,38 @@ on:
 permissions:
   contents: read
 
+# Cancel in-progress runs when a new commit lands on the same PR/branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
       - run: npm ci --legacy-peer-deps
-      - run: npx prettier --check .
-      - run: npx eslint . --max-warnings 0
+      - name: Prettier check
+        run: npx prettier --check .
+      - name: ESLint
+        run: npx eslint . --max-warnings 0
 
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -40,35 +53,59 @@ jobs:
       - run: npx tsc --noEmit -p packages/agent-memory-vercel
       - run: npx tsc --noEmit -p packages/agent-memory-cli
 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build --workspaces --if-present
+
   test:
     name: Test (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    needs: [build]
     strategy:
       matrix:
         node-version: ["18", "20", "22"]
       fail-fast: false
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+      - name: Build (so peer deps resolve)
+        run: npm run build --workspaces --if-present
       - name: Run tests
         run: npm test
-      - name: Build all packages
-        run: npm run build --workspaces --if-present
 
   bench:
     name: Benchmarks
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    needs: [build]
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
       - run: npm ci --legacy-peer-deps
-      - run: cd packages/agent-memory && npx vitest bench --run --reporter=basic
+      - run: npm run build --workspaces --if-present
+      - run: cd packages/agent-memory && npx vitest bench --run --reporter=default

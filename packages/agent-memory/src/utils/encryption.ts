@@ -42,7 +42,7 @@ export interface EncryptedEnvelope {
 
 const VERSION = 1 as const;
 const ALG = "aes-256-gcm" as const;
-const SCRYPT_SALT = "agent-memory:v1:encryption"; // Static salt — caller can override for production
+const MIN_SALT_BYTES = 16;
 
 function isEncryptedEnvelope(value: unknown): value is EncryptedEnvelope {
   if (!value || typeof value !== "object") return false;
@@ -62,21 +62,41 @@ export function generateKey(): Buffer {
 }
 
 /**
- * Derive a 32-byte key from a passphrase using scrypt.
- *
- * @param passphrase   User-supplied passphrase
- * @param salt         Optional salt; defaults to a fixed app-level salt.
- *                     Pass a unique salt per user in production.
+ * Generate a fresh scrypt salt of at least 16 bytes. Callers are encouraged
+ * to store the salt alongside the encrypted envelope (or per-user / per-tenant)
+ * so that the same passphrase can be recovered across processes.
  */
-export function keyFromPassphrase(passphrase: string, salt: string = SCRYPT_SALT): Buffer {
+export function generateSalt(bytes: number = MIN_SALT_BYTES): Buffer {
+  if (bytes < MIN_SALT_BYTES) {
+    throw new Error(`[agent-memory] salt must be at least ${MIN_SALT_BYTES} bytes (got ${bytes})`);
+  }
+  return randomBytes(bytes);
+}
+
+/**
+ * Derive a 32-byte key from a passphrase using scrypt with a per-user salt.
+ *
+ * @param passphrase  User-supplied passphrase
+ * @param salt        Salt — at least 16 random bytes. Pass a unique salt per user
+ *                    in production (use {@link generateSalt} to create one).
+ */
+export function keyFromPassphrase(passphrase: string, salt: Buffer | string): Buffer {
   if (!passphrase || passphrase.length === 0) {
     throw new Error("[agent-memory] passphrase must be non-empty");
   }
-  return scryptSync(passphrase, salt, 32);
+  const saltBuf = typeof salt === "string" ? Buffer.from(salt, "base64") : salt;
+  if (saltBuf.length < MIN_SALT_BYTES) {
+    throw new Error(`[agent-memory] salt must be at least ${MIN_SALT_BYTES} bytes (got ${saltBuf.length})`);
+  }
+  return scryptSync(passphrase, saltBuf, 32);
 }
 
 function ensureKey(key: Buffer | string): Buffer {
-  if (typeof key === "string") return keyFromPassphrase(key);
+  if (typeof key === "string") {
+    throw new Error(
+      "[agent-memory] string keys are not supported directly; use `keyFromPassphrase(passphrase, salt)` for passphrase-based keys, or pass a 32-byte Buffer"
+    );
+  }
   if (key.length !== 32) {
     throw new Error(`[agent-memory] encryption key must be 32 bytes (got ${key.length})`);
   }
@@ -102,7 +122,9 @@ export function encrypt(plaintext: string, key: Buffer | string): EncryptedEnvel
 /** Decrypt an envelope back to a UTF-8 string. Throws on tampering or invalid shape. */
 export function decrypt(envelope: unknown, key: Buffer | string): string {
   if (!isEncryptedEnvelope(envelope)) {
-    throw new Error(`[agent-memory] invalid envelope shape (v=${(envelope as { v?: unknown })?.v}, alg=${(envelope as { alg?: unknown })?.alg})`);
+    throw new Error(
+      `[agent-memory] invalid envelope shape (v=${(envelope as { v?: unknown })?.v}, alg=${(envelope as { alg?: unknown })?.alg})`
+    );
   }
   const keyBuf = ensureKey(key);
   const iv = Buffer.from(envelope.iv, "base64");

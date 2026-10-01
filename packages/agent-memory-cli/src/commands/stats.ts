@@ -8,8 +8,16 @@ export async function cmdStats(handle: SQLiteHandle, ctx: CommandContext): Promi
   } else {
     const lines = [
       `Total:      ${s.total}`,
-      `By kind:    ${Object.entries(s.byKind).map(([k, v]) => `${k}=${v}`).join(", ") || "(none)"}`,
-      `By tier:    ${Object.entries(s.byTier).map(([k, v]) => `${k}=${v}`).join(", ") || "(none)"}`,
+      `By kind:    ${
+        Object.entries(s.byKind)
+          .map(([k, v]) => `${k}=${v}`)
+          .join(", ") || "(none)"
+      }`,
+      `By tier:    ${
+        Object.entries(s.byTier)
+          .map(([k, v]) => `${k}=${v}`)
+          .join(", ") || "(none)"
+      }`,
       `Sessions:   ${s.sessions}`,
       `Users:      ${s.users}`,
       `Agents:     ${s.agents}`

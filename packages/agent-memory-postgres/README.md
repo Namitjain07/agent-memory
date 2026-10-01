@@ -41,14 +41,14 @@ new PostgresAdapter({
   client: existingPool,
   connectionString: "postgres://...",
   poolConfig: {
-    max: 10,                         // connection pool size
+    max: 10, // connection pool size
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000
   },
 
   // Schema
-  tableName: "memory_items",         // override for multi-tenant
-  autoCreateExtension: true           // CREATE EXTENSION IF NOT EXISTS vector
+  tableName: "memory_items", // override for multi-tenant
+  autoCreateExtension: true // CREATE EXTENSION IF NOT EXISTS vector
 });
 ```
 

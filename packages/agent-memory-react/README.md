@@ -25,10 +25,18 @@ import { useMemory } from "@namitjain.india/agent-memory-react";
 
 function Chat() {
   const {
-    messages, setMessages,
-    remember, recall, forget, update,
-    inject, summarise, clearSession, stats,
-    isLoading, error,
+    messages,
+    setMessages,
+    remember,
+    recall,
+    forget,
+    update,
+    inject,
+    summarise,
+    clearSession,
+    stats,
+    isLoading,
+    error,
     memory
   } = useMemory("session-1", {
     embedding: createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })

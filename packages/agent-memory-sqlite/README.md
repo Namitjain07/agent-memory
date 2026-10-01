@@ -25,12 +25,16 @@ import { SQLiteAdapter } from "@namitjain.india/agent-memory-sqlite";
 
 const memory = new AgentMemory({
   adapter: new SQLiteAdapter({ dbPath: "./memory.db" }),
-  embedding: provider  // any MemoryProvider
+  embedding: provider // any MemoryProvider
 });
 
 await memory.remember({
-  kind: "fact", sessionId: "user-1", key: "name", value: "Alex",
-  tier: "user", userId: "alex"
+  kind: "fact",
+  sessionId: "user-1",
+  key: "name",
+  value: "Alex",
+  tier: "user",
+  userId: "alex"
 });
 
 const items = await memory.recall("user's name", { sessionId: "user-1" });
@@ -40,9 +44,9 @@ const items = await memory.recall("user's name", { sessionId: "user-1" });
 
 ```ts
 new SQLiteAdapter({
-  dbPath: "./memory.db",      // or ":memory:" for in-memory
-  tableName: "memory_items",  // override for multi-tenant schemas
-  loadVss: true,              // load sqlite-vss extension for ANN
+  dbPath: "./memory.db", // or ":memory:" for in-memory
+  tableName: "memory_items", // override for multi-tenant schemas
+  loadVss: true, // load sqlite-vss extension for ANN
   vssExtensionPath: "./vector0" // path to sqlite-vss .so / .dylib
 });
 ```

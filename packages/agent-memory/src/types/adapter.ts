@@ -36,10 +36,7 @@ export interface MemoryUpdate {
 
 export interface MemoryAdapter {
   add(item: MemoryItem): Promise<void>;
-  search(
-    queryVector: number[],
-    options: MemorySearchOptions
-  ): Promise<MemorySearchCandidate[]>;
+  search(queryVector: number[], options: MemorySearchOptions): Promise<MemorySearchCandidate[]>;
   delete(id: string): Promise<void>;
   update(id: string, data: MemoryUpdate): Promise<void>;
   getBySession(sessionId: string): Promise<MemoryItem[]>;

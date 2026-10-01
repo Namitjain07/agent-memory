@@ -19,12 +19,12 @@ npm run rag            # RAG with hybrid scoring
 
 ## Available examples
 
-| Example | What it shows |
-|---------|---------------|
-| [`chatbot/basic.ts`](./chatbot/basic.ts) | Minimal chatbot with `withMemory` middleware. |
-| [`multi-user/multi-user.ts`](./multi-user/multi-user.ts) | User-tier memory that persists across sessions. |
-| [`tiered-memory/tiered.ts`](./tiered-memory/tiered.ts) | Combine user / agent / session tiers with recall filtering. |
-| [`vercel-ai/vercel-ai.ts`](./vercel-ai/vercel-ai.ts) | Vercel AI SDK integration via `@namitjain.india/agent-memory-vercel`. |
-| [`rag-pipeline/rag.ts`](./rag-pipeline/rag.ts) | RAG-style retrieval with hybrid vector + BM25 scoring. |
+| Example                                                  | What it shows                                                         |
+| -------------------------------------------------------- | --------------------------------------------------------------------- |
+| [`chatbot/basic.ts`](./chatbot/basic.ts)                 | Minimal chatbot with `withMemory` middleware.                         |
+| [`multi-user/multi-user.ts`](./multi-user/multi-user.ts) | User-tier memory that persists across sessions.                       |
+| [`tiered-memory/tiered.ts`](./tiered-memory/tiered.ts)   | Combine user / agent / session tiers with recall filtering.           |
+| [`vercel-ai/vercel-ai.ts`](./vercel-ai/vercel-ai.ts)     | Vercel AI SDK integration via `@namitjain.india/agent-memory-vercel`. |
+| [`rag-pipeline/rag.ts`](./rag-pipeline/rag.ts)           | RAG-style retrieval with hybrid vector + BM25 scoring.                |
 
 Most examples assume an OpenAI API key. For other providers, swap the `createProvider("openai", ...)` call.

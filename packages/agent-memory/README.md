@@ -19,10 +19,7 @@ import { AgentMemory, createProvider, withMemory } from "@namitjain.india/agent-
 const provider = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY });
 const memory = new AgentMemory({ embedding: provider });
 
-const runAgent = withMemory(
-  async (messages) => callYourLLM(messages),
-  { memory, sessionId: "user-123" }
-);
+const runAgent = withMemory(async (messages) => callYourLLM(messages), { memory, sessionId: "user-123" });
 
 // Turn 1 — agent remembers
 await runAgent([{ role: "user", content: "My name is Alex and I prefer TypeScript." }]);
@@ -33,18 +30,18 @@ const reply = await runAgent([{ role: "user", content: "What's my name?" }]);
 
 ## Why agent-memory?
 
-| | Raw vector DB | agent-memory |
-|--|--------------|-------------|
-| Hybrid scoring (vector + BM25 + recency + importance) | ❌ | ✅ |
-| 3-layer memory (episodic / semantic / summary) | ❌ | ✅ |
-| Multi-tier scoping (user / agent / session) | ❌ | ✅ |
-| At-rest encryption helpers | ❌ | ✅ |
-| PII redaction | ❌ | ✅ |
-| Built-in retry / timeout / AbortSignal | ❌ | ✅ |
-| Auto-summarisation of old turns | ❌ | ✅ |
-| Works without embeddings (graceful degradation) | ❌ | ✅ |
-| Provider selection in 1 line | ❌ | ✅ |
-| TypeScript-first, framework-agnostic | varies | ✅ |
+|                                                       | Raw vector DB | agent-memory |
+| ----------------------------------------------------- | ------------- | ------------ |
+| Hybrid scoring (vector + BM25 + recency + importance) | ❌            | ✅           |
+| 3-layer memory (episodic / semantic / summary)        | ❌            | ✅           |
+| Multi-tier scoping (user / agent / session)           | ❌            | ✅           |
+| At-rest encryption helpers                            | ❌            | ✅           |
+| PII redaction                                         | ❌            | ✅           |
+| Built-in retry / timeout / AbortSignal                | ❌            | ✅           |
+| Auto-summarisation of old turns                       | ❌            | ✅           |
+| Works without embeddings (graceful degradation)       | ❌            | ✅           |
+| Provider selection in 1 line                          | ❌            | ✅           |
+| TypeScript-first, framework-agnostic                  | varies        | ✅           |
 
 ## What's included
 
@@ -112,8 +109,13 @@ const memory = new AgentMemory({
 
 // Long-term user fact
 await memory.remember({
-  kind: "fact", sessionId: "s1", key: "language", value: "TypeScript",
-  tier: "user", userId: "alex", importance: 1
+  kind: "fact",
+  sessionId: "s1",
+  key: "language",
+  value: "TypeScript",
+  tier: "user",
+  userId: "alex",
+  importance: 1
 });
 
 // Per-session turn (auto-embedded)
@@ -121,7 +123,9 @@ await memory.remember({ role: "user", content: "I build AI agents", sessionId: "
 
 // Hybrid recall — vector + BM25 + recency + importance
 const results = await memory.recall("What does the user do?", {
-  sessionId: "s1", topK: 3, tiers: ["user"]
+  sessionId: "s1",
+  topK: 3,
+  tiers: ["user"]
 });
 ```
 
@@ -129,8 +133,11 @@ const results = await memory.recall("What does the user do?", {
 
 ```ts
 const items = Array.from({ length: 1000 }, (_, i) => ({
-  kind: "fact" as const, sessionId: "s1",
-  key: `pref_${i}`, value: `Value ${i}`, importance: 0.5
+  kind: "fact" as const,
+  sessionId: "s1",
+  key: `pref_${i}`,
+  value: `Value ${i}`,
+  importance: 0.5
 }));
 const { stored, errors } = await memory.rememberBatch({ items, concurrency: 8 });
 ```

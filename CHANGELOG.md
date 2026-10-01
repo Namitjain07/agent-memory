@@ -111,19 +111,20 @@ all providers use native `fetch`.
 
 **Supported providers:**
 
-| Provider | Embed | Summarise | Notes |
-|----------|-------|-----------|-------|
-| `openai` | ✅ | ✅ | `text-embedding-3-small` + `gpt-4o-mini` |
-| `nvidia` | ✅ | ✅ | OpenAI-compatible NIM endpoint |
-| `mistral` | ✅ | ✅ | `mistral-embed` + `mistral-small-latest` |
-| `azure` | ✅ | ✅ | Deployment-based URL + `api-key` header |
-| `ollama` | ✅ | ✅ | Local, no API key needed |
-| `cohere` | ✅ | ✅ | `embed-english-v3.0` + `command-r-plus` |
-| `google` | ✅ | ✅ | `text-embedding-004` + `gemini-1.5-flash` |
-| `anthropic` | ❌ | ✅ | Summarise only (`claude-3-5-haiku`) |
-| `voyage` | ✅ | ❌ | Embeddings only (`voyage-3`) |
+| Provider    | Embed | Summarise | Notes                                     |
+| ----------- | ----- | --------- | ----------------------------------------- |
+| `openai`    | ✅    | ✅        | `text-embedding-3-small` + `gpt-4o-mini`  |
+| `nvidia`    | ✅    | ✅        | OpenAI-compatible NIM endpoint            |
+| `mistral`   | ✅    | ✅        | `mistral-embed` + `mistral-small-latest`  |
+| `azure`     | ✅    | ✅        | Deployment-based URL + `api-key` header   |
+| `ollama`    | ✅    | ✅        | Local, no API key needed                  |
+| `cohere`    | ✅    | ✅        | `embed-english-v3.0` + `command-r-plus`   |
+| `google`    | ✅    | ✅        | `text-embedding-004` + `gemini-1.5-flash` |
+| `anthropic` | ❌    | ✅        | Summarise only (`claude-3-5-haiku`)       |
+| `voyage`    | ✅    | ❌        | Embeddings only (`voyage-3`)              |
 
 **New exports:**
+
 - `createProvider(name, options)` — type-safe factory with full overloads
 - Named exports: `openaiProvider`, `nvidiaProvider`, `mistralProvider`,
   `azureOpenAIProvider`, `cohereProvider`, `googleProvider`,
@@ -140,6 +141,7 @@ response parsing, and edge cases.
 ### 🚀 New Features
 
 **Core (`@namitjain.india/agent-memory`)**
+
 - `clear(sessionId?)` — delete all memory items for a session in one call
 - `update(id, data)` — update importance, embedding, content, or metadata on any stored item
 - `stats(sessionId?)` — returns `{ total, byKind, sessionIds }` for a session
@@ -151,6 +153,7 @@ response parsing, and edge cases.
 - `MemoryStats` type exported from the package
 
 **React (`@namitjain.india/agent-memory-react`)**
+
 - `summarise(options?)` added to `useMemory` return
 - `clearSession()` added to `useMemory` return
 - `stats()` added to `useMemory` return
@@ -158,10 +161,12 @@ response parsing, and edge cases.
 - `error: Error | null` state
 
 **SQLite (`@namitjain.india/agent-memory-sqlite`)**
+
 - `clear(sessionId)` method
 - Partial index `WHERE embedding IS NOT NULL` for faster vector search
 
 **Postgres (`@namitjain.india/agent-memory-postgres`)**
+
 - `clear(sessionId)` method
 - HNSW index hint (`USING hnsw`) for production-grade ANN performance
 

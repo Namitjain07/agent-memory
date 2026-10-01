@@ -113,10 +113,7 @@ export class PostgresAdapter implements MemoryAdapter {
     );
   }
 
-  async search(
-    queryVector: number[],
-    options: MemorySearchOptions
-  ): Promise<MemorySearchCandidate[]> {
+  async search(queryVector: number[], options: MemorySearchOptions): Promise<MemorySearchCandidate[]> {
     await this.ensureInitialized();
     const client = this.client!;
     const limit = options.limit ?? 20;
@@ -132,7 +129,9 @@ export class PostgresAdapter implements MemoryAdapter {
     }
     if (options.tiers && options.tiers.length > 0) {
       // Items with NULL tier are treated as "session" tier for backward compatibility
-      conditions.push(`(tier = ANY($${nextParam}::text[]) OR (tier IS NULL AND 'session' = ANY($${nextParam}::text[])))`);
+      conditions.push(
+        `(tier = ANY($${nextParam}::text[]) OR (tier IS NULL AND 'session' = ANY($${nextParam}::text[])))`
+      );
       params.push(options.tiers);
       nextParam += 1;
     }
@@ -199,9 +198,7 @@ export class PostgresAdapter implements MemoryAdapter {
     let index = 1;
 
     const push = (column: string, value: unknown, cast?: string): void => {
-      updates.push(
-        `${column} = $${index}${cast ? `::${cast}` : ""}`
-      );
+      updates.push(`${column} = $${index}${cast ? `::${cast}` : ""}`);
       values.push(value);
       index += 1;
     };
@@ -218,8 +215,7 @@ export class PostgresAdapter implements MemoryAdapter {
     if (data.timestamp !== undefined) push("timestamp", data.timestamp);
     if (data.fromTimestamp !== undefined) push("from_timestamp", data.fromTimestamp);
     if (data.toTimestamp !== undefined) push("to_timestamp", data.toTimestamp);
-    if (data.replacedEntryIds !== undefined)
-      push("replaced_entry_ids", data.replacedEntryIds, "text[]");
+    if (data.replacedEntryIds !== undefined) push("replaced_entry_ids", data.replacedEntryIds, "text[]");
     if (data.tier !== undefined) push("tier", data.tier);
     if (data.userId !== undefined) push("user_id", data.userId);
     if (data.agentId !== undefined) push("agent_id", data.agentId);
@@ -249,10 +245,7 @@ export class PostgresAdapter implements MemoryAdapter {
    */
   async clear(sessionId: string): Promise<void> {
     await this.ensureInitialized();
-    await this.client!.query(
-      `DELETE FROM ${this.tableName} WHERE session_id = $1`,
-      [sessionId]
-    );
+    await this.client!.query(`DELETE FROM ${this.tableName} WHERE session_id = $1`, [sessionId]);
   }
 
   async close(): Promise<void> {
@@ -401,9 +394,8 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function loadOptionalModule(moduleName: string): Promise<unknown> {
-  const dynamicImport = new Function(
-    "moduleName",
-    "return import(moduleName);"
-  ) as (moduleName: string) => Promise<unknown>;
+  const dynamicImport = new Function("moduleName", "return import(moduleName);") as (
+    moduleName: string
+  ) => Promise<unknown>;
   return dynamicImport(moduleName);
 }

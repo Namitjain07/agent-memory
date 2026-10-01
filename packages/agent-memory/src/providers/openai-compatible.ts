@@ -24,14 +24,20 @@ export interface OpenAIProviderOptions {
   requestOptions?: RequestOptions;
 }
 
-export interface NVIDIAProviderOptions extends Omit<OpenAIProviderOptions, "baseURL" | "embeddingModel" | "chatModel"> {
+export interface NVIDIAProviderOptions extends Omit<
+  OpenAIProviderOptions,
+  "baseURL" | "embeddingModel" | "chatModel"
+> {
   embeddingModel?: string; // default: nvidia/nv-embedqa-e5-v5
-  chatModel?: string;      // default: meta/llama-3.1-8b-instruct
+  chatModel?: string; // default: meta/llama-3.1-8b-instruct
 }
 
-export interface MistralProviderOptions extends Omit<OpenAIProviderOptions, "baseURL" | "embeddingModel" | "chatModel"> {
+export interface MistralProviderOptions extends Omit<
+  OpenAIProviderOptions,
+  "baseURL" | "embeddingModel" | "chatModel"
+> {
   embeddingModel?: string; // default: mistral-embed
-  chatModel?: string;      // default: mistral-small-latest
+  chatModel?: string; // default: mistral-small-latest
 }
 
 export interface AzureOpenAIProviderOptions {
@@ -59,7 +65,10 @@ interface ChatResponse {
   choices: { message: { content: string } }[];
 }
 
-function makeAuthHeaders(apiKey: string | undefined, extra: Record<string, string> = {}): Record<string, string> {
+function makeAuthHeaders(
+  apiKey: string | undefined,
+  extra: Record<string, string> = {}
+): Record<string, string> {
   const auth = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
   return { ...auth, ...extra };
 }

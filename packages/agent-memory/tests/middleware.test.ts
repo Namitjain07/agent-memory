@@ -9,10 +9,7 @@ const embedFn = async (text: string) => {
 describe("withMemory middleware — output extraction", () => {
   it("stores plain string output", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => "Hello from the agent",
-      { memory, sessionId: "s1" }
-    );
+    const wrapped = withMemory(async () => "Hello from the agent", { memory, sessionId: "s1" });
     await wrapped([{ role: "user", content: "Hi" }]);
     const items = await memory.getBySession("s1");
     const assistant = items.find((i) => i.kind === "entry" && i.role === "assistant");
@@ -24,10 +21,10 @@ describe("withMemory middleware — output extraction", () => {
 
   it("extracts content from { content: string } (Anthropic-style)", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => ({ content: "Anthropic-style reply" }),
-      { memory, sessionId: "s2" }
-    );
+    const wrapped = withMemory(async () => ({ content: "Anthropic-style reply" }), {
+      memory,
+      sessionId: "s2"
+    });
     await wrapped([{ role: "user", content: "Hi" }]);
     const items = await memory.getBySession("s2");
     const assistant = items.find((i) => i.kind === "entry" && i.role === "assistant");
@@ -40,9 +37,7 @@ describe("withMemory middleware — output extraction", () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
     const wrapped = withMemory(
       async () => ({
-        choices: [
-          { message: { role: "assistant", content: "OpenAI-style reply" } }
-        ]
+        choices: [{ message: { role: "assistant", content: "OpenAI-style reply" } }]
       }),
       { memory, sessionId: "s3" }
     );
@@ -56,10 +51,10 @@ describe("withMemory middleware — output extraction", () => {
 
   it("extracts content from { output_text } (OpenAI Responses API)", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => ({ output_text: "Responses-API reply" }),
-      { memory, sessionId: "s4" }
-    );
+    const wrapped = withMemory(async () => ({ output_text: "Responses-API reply" }), {
+      memory,
+      sessionId: "s4"
+    });
     await wrapped([{ role: "user", content: "Hi" }]);
     const items = await memory.getBySession("s4");
     const assistant = items.find((i) => i.kind === "entry" && i.role === "assistant");
@@ -70,10 +65,10 @@ describe("withMemory middleware — output extraction", () => {
 
   it("extracts content from { content: [{ type: 'text', text }] }", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => ({ content: [{ type: "text", text: "Parts-based reply" }] }),
-      { memory, sessionId: "s5" }
-    );
+    const wrapped = withMemory(async () => ({ content: [{ type: "text", text: "Parts-based reply" }] }), {
+      memory,
+      sessionId: "s5"
+    });
     await wrapped([{ role: "user", content: "Hi" }]);
     const items = await memory.getBySession("s5");
     const assistant = items.find((i) => i.kind === "entry" && i.role === "assistant");
@@ -84,10 +79,7 @@ describe("withMemory middleware — output extraction", () => {
 
   it("extracts content from { text } (Vercel AI SDK generateText)", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => ({ text: "Vercel-AI-SDK reply" }),
-      { memory, sessionId: "s6" }
-    );
+    const wrapped = withMemory(async () => ({ text: "Vercel-AI-SDK reply" }), { memory, sessionId: "s6" });
     await wrapped([{ role: "user", content: "Hi" }]);
     const items = await memory.getBySession("s6");
     const assistant = items.find((i) => i.kind === "entry" && i.role === "assistant");
@@ -128,10 +120,7 @@ describe("withMemory middleware — output extraction", () => {
 
   it("defaults assistant importance to 0.3 (lower than user)", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => "Plain reply",
-      { memory, sessionId: "s8" }
-    );
+    const wrapped = withMemory(async () => "Plain reply", { memory, sessionId: "s8" });
     await wrapped([{ role: "user", content: "Hi" }]);
     const items = await memory.getBySession("s8");
     const userTurn = items.find((i) => i.kind === "entry" && i.role === "user");
@@ -142,10 +131,7 @@ describe("withMemory middleware — output extraction", () => {
 
   it("honours runOptions.importance for both turns when set", async () => {
     const memory = new AgentMemory({ embedding: { embedFn } });
-    const wrapped = withMemory(
-      async () => "Plain reply",
-      { memory, sessionId: "s9" }
-    );
+    const wrapped = withMemory(async () => "Plain reply", { memory, sessionId: "s9" });
     await wrapped([{ role: "user", content: "Hi" }], { importance: 0.9 });
     const items = await memory.getBySession("s9");
     const userTurn = items.find((i) => i.kind === "entry" && i.role === "user");

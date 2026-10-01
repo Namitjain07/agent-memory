@@ -101,7 +101,7 @@ Then open a PR against `main`. Fill in the PR template. The PR will trigger the 
 - **Naming**: `camelCase` for functions/variables, `PascalCase` for classes/types, `UPPER_SNAKE_CASE` for env-var style constants.
 - **No runtime deps in core.** If you need a new dependency in `packages/agent-memory/src/`, justify it in the PR description and consider an opt-in pattern instead.
 - **Prettier**: trailing comma off, single quotes, 100-char line width. Configured in `.prettierrc.json`.
-- **Comments**: explain *why*, not *what*. The code should speak for itself.
+- **Comments**: explain _why_, not _what_. The code should speak for itself.
 
 ## Testing conventions
 

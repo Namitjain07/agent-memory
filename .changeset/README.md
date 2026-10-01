@@ -11,6 +11,7 @@ npx changeset add
 ```
 
 This will prompt you for:
+
 1. Which packages are affected (multi-select)
 2. The bump type (`patch`, `minor`, `major`)
 3. A short summary of the change

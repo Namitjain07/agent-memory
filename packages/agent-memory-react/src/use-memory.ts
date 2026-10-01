@@ -39,14 +39,9 @@ export interface UseMemoryResult {
   memory: AgentMemory;
 }
 
-export function useMemory(
-  sessionId: string,
-  options: UseMemoryOptions = {}
-): UseMemoryResult {
+export function useMemory(sessionId: string, options: UseMemoryOptions = {}): UseMemoryResult {
   const { memory: providedMemory, initialMessages, ...memoryOptions } = options;
-  const [messages, setMessages] = useState<MemoryMessage[]>(
-    initialMessages ?? []
-  );
+  const [messages, setMessages] = useState<MemoryMessage[]>(initialMessages ?? []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -74,8 +69,7 @@ export function useMemory(
   // Stable ref so callbacks below don't re-create on every render
   const wrapAsyncRef = useRef(wrapAsyncFn);
   wrapAsyncRef.current = wrapAsyncFn;
-  const wrapAsync = <T>(fn: () => Promise<T>): Promise<T> =>
-    wrapAsyncRef.current(fn);
+  const wrapAsync = <T>(fn: () => Promise<T>): Promise<T> => wrapAsyncRef.current(fn);
 
   const remember = useCallback(
     (input: Omit<RememberInput, "sessionId">): Promise<MemoryItem> =>
@@ -86,10 +80,7 @@ export function useMemory(
         } as RememberInput);
 
         if (item.kind === "entry") {
-          setMessages((previous) => [
-            ...previous,
-            { role: item.role, content: item.content }
-          ]);
+          setMessages((previous) => [...previous, { role: item.role, content: item.content }]);
         }
 
         return item;
@@ -103,14 +94,10 @@ export function useMemory(
     [memory, sessionId, wrapAsync]
   );
 
-  const forget = useCallback(
-    (id: string) => wrapAsync(() => memory.forget(id)),
-    [memory, wrapAsync]
-  );
+  const forget = useCallback((id: string) => wrapAsync(() => memory.forget(id)), [memory, wrapAsync]);
 
   const update = useCallback(
-    (id: string, data: Parameters<AgentMemory["update"]>[1]) =>
-      wrapAsync(() => memory.update(id, data)),
+    (id: string, data: Parameters<AgentMemory["update"]>[1]) => wrapAsync(() => memory.update(id, data)),
     [memory, wrapAsync]
   );
 
@@ -119,8 +106,7 @@ export function useMemory(
       currentMessages: MemoryMessage[],
       injectOptions: Omit<RecallOptions, "sessionId"> & { query?: string } = {}
     ) => {
-      const queryPart =
-        injectOptions.query !== undefined ? { query: injectOptions.query } : {};
+      const queryPart = injectOptions.query !== undefined ? { query: injectOptions.query } : {};
       return wrapAsync(() =>
         memory.inject(currentMessages, {
           ...injectOptions,
@@ -149,10 +135,7 @@ export function useMemory(
 
   const clearError = useCallback(() => setError(null), []);
 
-  const stats = useCallback(
-    () => wrapAsync(() => memory.stats(sessionId)),
-    [memory, sessionId, wrapAsync]
-  );
+  const stats = useCallback(() => wrapAsync(() => memory.stats(sessionId)), [memory, sessionId, wrapAsync]);
 
   return {
     messages,

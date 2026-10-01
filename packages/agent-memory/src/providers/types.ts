@@ -46,9 +46,7 @@ const SUMMARY_SYSTEM_PROMPT =
   "Be specific. Return only the summary, no preamble or explanation.";
 
 export function buildConversationText(entries: MemoryEntry[]): string {
-  return entries
-    .map((e) => `${e.role.toUpperCase()}: ${e.content.trim()}`)
-    .join("\n");
+  return entries.map((e) => `${e.role.toUpperCase()}: ${e.content.trim()}`).join("\n");
 }
 
 export function buildSummaryPrompt(entries: MemoryEntry[]): string {

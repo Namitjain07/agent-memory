@@ -2,12 +2,12 @@
 
 ## Supported versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.5.x   | ✅ Active          |
+| Version | Supported              |
+| ------- | ---------------------- |
+| 0.5.x   | ✅ Active              |
 | 0.4.x   | ⚠️ Critical fixes only |
-| 0.3.x   | ❌ End of life     |
-| < 0.3   | ❌ End of life     |
+| 0.3.x   | ❌ End of life         |
+| < 0.3   | ❌ End of life         |
 
 ## Reporting a vulnerability
 

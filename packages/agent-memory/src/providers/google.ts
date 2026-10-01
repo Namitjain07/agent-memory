@@ -44,21 +44,16 @@ export function googleProvider(options: GoogleProviderOptions): MemoryProvider {
   const embeddingModel = options.embeddingModel ?? "text-embedding-004";
   const chatModel = options.chatModel ?? "gemini-1.5-flash";
   const key = options.apiKey;
-  const headers = {};  // auth is via ?key= query param for Google
+  const headers = {}; // auth is via ?key= query param for Google
   const requestOptions = options.requestOptions;
 
   const embedFn = async (text: string): Promise<number[]> => {
     const url = `${base}/models/${embeddingModel}:embedContent?key=${key}`;
-    const res = await fetchJSON<GeminiEmbedResponse>(
-      url,
-      { content: { parts: [{ text }] } },
-      headers,
-      {
-        ...DEFAULT_RETRY_POLICY,
-        ...(requestOptions ?? {}),
-        context: "google embed"
-      }
-    );
+    const res = await fetchJSON<GeminiEmbedResponse>(url, { content: { parts: [{ text }] } }, headers, {
+      ...DEFAULT_RETRY_POLICY,
+      ...(requestOptions ?? {}),
+      context: "google embed"
+    });
     return res.embedding.values;
   };
 

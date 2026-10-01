@@ -21,29 +21,43 @@ const memory = new AgentMemory({
 async function main() {
   // User facts (persist across all sessions)
   await memory.remember({
-    kind: "fact", key: "name", value: "Alex", importance: 0.9,
-    tier: "user", userId: "alex"
+    kind: "fact",
+    key: "name",
+    value: "Alex",
+    importance: 0.9,
+    tier: "user",
+    userId: "alex"
   });
   await memory.remember({
-    kind: "fact", key: "language", value: "TypeScript", importance: 0.8,
-    tier: "user", userId: "alex"
+    kind: "fact",
+    key: "language",
+    value: "TypeScript",
+    importance: 0.8,
+    tier: "user",
+    userId: "alex"
   });
 
   // Agent persona (persists across users)
   await memory.remember({
-    kind: "fact", key: "persona", value: "helpful, concise, never use jargon",
-    importance: 1.0, tier: "agent", agentId: "support-bot"
+    kind: "fact",
+    key: "persona",
+    value: "helpful, concise, never use jargon",
+    importance: 1.0,
+    tier: "agent",
+    agentId: "support-bot"
   });
 
   // Per-session context
   await memory.remember({
-    role: "user", content: "I'm building a CLI tool in TypeScript",
+    role: "user",
+    content: "I'm building a CLI tool in TypeScript",
     sessionId: "sess-1"
   });
 
   // Recall — gets relevant context from all tiers
   const recalled = await memory.recall("what should the agent know about this user?", {
-    sessionId: "sess-1", topK: 5
+    sessionId: "sess-1",
+    topK: 5
   });
   console.log("Recall results:");
   for (const r of recalled) {
@@ -53,7 +67,9 @@ async function main() {
 
   // Recall only from user tier
   const userOnly = await memory.recall("preferences", {
-    sessionId: "sess-1", topK: 5, tiers: ["user"]
+    sessionId: "sess-1",
+    topK: 5,
+    tiers: ["user"]
   });
   console.log("\nUser tier only:");
   for (const r of userOnly) {

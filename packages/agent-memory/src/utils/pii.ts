@@ -13,12 +13,12 @@
 
 const DEFAULT_PATTERNS: Record<string, RegExp> = {
   email: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
-  // International phone (loose): 7+ digits with optional +, spaces, dashes
-  phone: /(?:\+?\d[\d\s().-]{7,}\d)/g,
+  // International phone: must start with + or be 10+ digits (avoids matching SSN/IP)
+  phone: /(?:\+\d[\d\s().-]{7,15}\d|\b\d{10,15}\b)/g,
   // US SSN: 123-45-6789
   ssn: /\b\d{3}-\d{2}-\d{4}\b/g,
-  // Major credit cards (13-19 digits, allowing dashes/spaces)
-  creditCard: /\b(?:\d[ -]*?){13,19}\b/g,
+  // Major credit cards (13-19 digits, allowing dashes/spaces, bounded)
+  creditCard: /\b(?:\d[ -]?){12,18}\d\b/g,
   // IPv4
   ipv4: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
   // Bearer JWT-ish: three base64url chunks separated by dots

@@ -1,9 +1,5 @@
 import { AgentMemory } from "../core/agent-memory";
-import type {
-  AgentFunction,
-  WithMemoryOptions,
-  WithMemoryRunOptions
-} from "../types/config";
+import type { AgentFunction, WithMemoryOptions, WithMemoryRunOptions } from "../types/config";
 import type { MemoryMessage } from "../types/memory";
 
 /**
@@ -88,11 +84,7 @@ function lastUserMessage(messages: MemoryMessage[]): MemoryMessage | null {
 export function withMemory<TOutput, TExtra extends unknown[] = []>(
   agentFn: AgentFunction<TOutput, TExtra>,
   options: WithMemoryOptions = {}
-): (
-  messages: MemoryMessage[],
-  runOptions?: WithMemoryRunOptions,
-  ...extra: TExtra
-) => Promise<TOutput> {
+): (messages: MemoryMessage[], runOptions?: WithMemoryRunOptions, ...extra: TExtra) => Promise<TOutput> {
   const memory = options.memory ?? new AgentMemory(options);
 
   return async (
@@ -105,10 +97,7 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
     const agentId = runOptions.agentId ?? options.agentId;
     const tier = runOptions.tier ?? options.tier;
     const userMessage = lastUserMessage(messages);
-    const importancePart =
-      runOptions.importance !== undefined
-        ? { importance: runOptions.importance }
-        : {};
+    const importancePart = runOptions.importance !== undefined ? { importance: runOptions.importance } : {};
     const tierPart = tier !== undefined ? { tier } : {};
     const userIdPart = userId !== undefined ? { userId } : {};
     const agentIdPart = agentId !== undefined ? { agentId } : {};
@@ -142,9 +131,7 @@ export function withMemory<TOutput, TExtra extends unknown[] = []>(
         // Assistant turns default to a lower importance than user turns
         // unless the caller explicitly set an importance on the run options.
         const assistantImportance =
-          runOptions.importance !== undefined
-            ? importancePart
-            : { importance: 0.3 };
+          runOptions.importance !== undefined ? importancePart : { importance: 0.3 };
         await memory.remember({
           role: "assistant",
           content: outputText,

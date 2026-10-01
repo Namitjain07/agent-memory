@@ -96,7 +96,10 @@ export async function fetchJSON<T>(
 
     let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     if (options.timeoutMs && options.timeoutMs > 0) {
-      timeoutHandle = setTimeout(() => controller.abort(new TimeoutError(`${context}Request timed out after ${options.timeoutMs}ms`)), options.timeoutMs);
+      timeoutHandle = setTimeout(
+        () => controller.abort(new TimeoutError(`${context}Request timed out after ${options.timeoutMs}ms`)),
+        options.timeoutMs
+      );
     }
 
     try {
@@ -165,12 +168,18 @@ export async function fetchJSON<T>(
   }
 
   // Should be unreachable — but TS appeasement
-  throw lastError instanceof Error ? lastError : new ProviderError(`${context}Request failed`, 0, { url, body });
+  throw lastError instanceof Error
+    ? lastError
+    : new ProviderError(`${context}Request failed`, 0, { url, body });
 }
 
 /**
  * GET a URL and parse the JSON response. Same retry/timeout behaviour as fetchJSON.
  */
-export async function fetchGetJSON<T>(url: string, headers: Record<string, string> = {}, options: RequestOptions = {}): Promise<T> {
+export async function fetchGetJSON<T>(
+  url: string,
+  headers: Record<string, string> = {},
+  options: RequestOptions = {}
+): Promise<T> {
   return fetchJSON<T>(url, undefined as unknown as object, headers, options);
 }

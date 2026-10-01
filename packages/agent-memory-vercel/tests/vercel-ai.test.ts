@@ -73,7 +73,9 @@ describe("withAIMemory", () => {
     const model = makeMockModel();
     const wrapped = withAIMemory(model, { memory, sessionId: "s2", topK: 3 });
 
-    const inner = wrapped as { doStream: (args: { prompt: unknown }) => Promise<{ textStream: AsyncIterable<string> }> };
+    const inner = wrapped as {
+      doStream: (args: { prompt: unknown }) => Promise<{ textStream: AsyncIterable<string> }>;
+    };
     const stream = await inner.doStream({
       prompt: [{ role: "user", content: "Hello!" }]
     });
@@ -92,9 +94,9 @@ describe("withAIMemory", () => {
   });
 
   it("throws on missing doGenerate", () => {
-    expect(() =>
-      withAIMemory({} as never, { memory: new AgentMemory(), sessionId: "s" })
-    ).toThrow(/missing doGenerate/);
+    expect(() => withAIMemory({} as never, { memory: new AgentMemory(), sessionId: "s" })).toThrow(
+      /missing doGenerate/
+    );
   });
 });
 

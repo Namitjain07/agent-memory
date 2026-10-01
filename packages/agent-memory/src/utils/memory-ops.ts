@@ -27,10 +27,7 @@ const DEFAULT_THRESHOLD = 0.92;
  * Useful for cleaning up a session before summarisation, or as part of
  * a periodic "memory hygiene" job.
  */
-export function deduplicateSimilarFacts(
-  items: MemoryItem[],
-  options: DedupOptions = {}
-): MemoryItem[] {
+export function deduplicateSimilarFacts(items: MemoryItem[], options: DedupOptions = {}): MemoryItem[] {
   const threshold = options.threshold ?? DEFAULT_THRESHOLD;
   const kinds = options.kinds ?? (["fact"] as const);
   const preferNewer = options.preferNewer ?? true;
@@ -38,12 +35,10 @@ export function deduplicateSimilarFacts(
   const candidates = items.filter((item) => kinds.includes(item.kind as "fact" | "entry"));
   const others = items.filter((item) => !kinds.includes(item.kind as "fact" | "entry"));
 
-  const withEmbedding = candidates.filter(
-    (item): item is MemoryItem & { embedding: number[] } => Boolean(item.embedding && item.embedding.length > 0)
+  const withEmbedding = candidates.filter((item): item is MemoryItem & { embedding: number[] } =>
+    Boolean(item.embedding && item.embedding.length > 0)
   );
-  const withoutEmbedding = candidates.filter(
-    (item) => !(item.embedding && item.embedding.length > 0)
-  );
+  const withoutEmbedding = candidates.filter((item) => !(item.embedding && item.embedding.length > 0));
 
   const keep: MemoryItem[] = [];
   const drop = new Set<string>();
@@ -58,9 +53,7 @@ export function deduplicateSimilarFacts(
       if (a.embedding.length !== b.embedding.length) continue;
       const sim = cosineSimilarity(a.embedding, b.embedding);
       if (sim >= threshold) {
-        const loser = preferNewer
-          ? a.timestamp >= b.timestamp ? b : a
-          : a.timestamp <= b.timestamp ? b : a;
+        const loser = preferNewer ? (a.timestamp >= b.timestamp ? b : a) : a.timestamp <= b.timestamp ? b : a;
         drop.add(loser.id);
         // If the loser is the existing "keep" candidate, swap
         if (loser.id === a.id) {
@@ -87,9 +80,7 @@ function mergeFact(a: MemoryFact, b: MemoryFact, options: MergeOptions): MemoryF
     ...a,
     value: a.value === b.value ? a.value : `${a.value}; ${b.value}`,
     timestamp: Math.max(a.timestamp, b.timestamp),
-    importance: importanceByMax
-      ? Math.max(a.importance, b.importance)
-      : (a.importance + b.importance) / 2
+    importance: importanceByMax ? Math.max(a.importance, b.importance) : (a.importance + b.importance) / 2
   };
 }
 
@@ -99,9 +90,7 @@ function mergeEntry(a: MemoryEntry, b: MemoryEntry, options: MergeOptions): Memo
     ...a,
     content: a.content === b.content ? a.content : `${a.content}\n${b.content}`,
     timestamp: Math.max(a.timestamp, b.timestamp),
-    importance: importanceByMax
-      ? Math.max(a.importance, b.importance)
-      : (a.importance + b.importance) / 2
+    importance: importanceByMax ? Math.max(a.importance, b.importance) : (a.importance + b.importance) / 2
   };
 }
 

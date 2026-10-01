@@ -64,12 +64,10 @@ export interface AIMemoryOptions {
  * object that exposes `name` / `provider` / `modelId` so it can be type-checked
  * and inspected, but invoking generate/stream will throw a helpful error.
  */
-export function withAIMemory(
-  model: unknown,
-  options: AIMemoryOptions
-): unknown {
+export function withAIMemory(model: unknown, options: AIMemoryOptions): unknown {
   const adapter: AIAdapterLike = (model as { __aiAdapter?: AIAdapterLike }).__aiAdapter ?? {
-    specificationVersion: ((model as { specificationVersion?: string }).specificationVersion ?? "v1") as "v1" | "v2" | "v3",
+    specificationVersion: ((model as { specificationVersion?: string }).specificationVersion ?? "v1") as
+      "v1" | "v2" | "v3",
     provider: (model as { provider?: string }).provider ?? "unknown",
     modelId: (model as { modelId?: string }).modelId ?? "unknown"
   };
@@ -123,11 +121,13 @@ export function createMemoryTools(
   scope?: { sessionId?: string; userId?: string; agentId?: string }
 ): Record<string, unknown> {
   // Dynamic import so this package remains importable without `ai` installed.
-  let toolFn: ((config: {
-    description: string;
-    parameters: unknown;
-    execute: (args: Record<string, unknown>) => Promise<unknown>;
-  }) => unknown) | undefined;
+  let toolFn:
+    | ((config: {
+        description: string;
+        parameters: unknown;
+        execute: (args: Record<string, unknown>) => Promise<unknown>;
+      }) => unknown)
+    | undefined;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -138,9 +138,7 @@ export function createMemoryTools(
   }
 
   if (!toolFn) {
-    throw new Error(
-      "[agent-memory-vercel] createMemoryTools requires the `ai` package to be installed."
-    );
+    throw new Error("[agent-memory-vercel] createMemoryTools requires the `ai` package to be installed.");
   }
 
   const sessionId = scope?.sessionId ?? "default";
@@ -236,7 +234,9 @@ function lastUserText(prompt: unknown): string | null {
       if (typeof part.content === "string") return part.content;
       if (Array.isArray(part.content)) {
         const text = part.content
-          .map((c) => (typeof c === "object" && c && "text" in c ? String((c as { text: unknown }).text) : ""))
+          .map((c) =>
+            typeof c === "object" && c && "text" in c ? String((c as { text: unknown }).text) : ""
+          )
           .join("");
         return text || null;
       }
@@ -262,11 +262,15 @@ async function interceptGenerate(
       })
     : [];
 
-  const memoryBlock = recall.length > 0
-    ? `Relevant memories about this user:\n${recall
-        .map((r, i) => `${i + 1}. [${r.item.kind}] ${r.item.kind === "fact" ? `${r.item.key}: ${r.item.value}` : r.item.content}`)
-        .join("\n")}`
-    : "";
+  const memoryBlock =
+    recall.length > 0
+      ? `Relevant memories about this user:\n${recall
+          .map(
+            (r, i) =>
+              `${i + 1}. [${r.item.kind}] ${r.item.kind === "fact" ? `${r.item.key}: ${r.item.value}` : r.item.content}`
+          )
+          .join("\n")}`
+      : "";
 
   const augmentedPrompt = augmentPrompt(args.prompt, options.systemPrompt, memoryBlock);
 
@@ -321,11 +325,15 @@ async function interceptStream(
       })
     : [];
 
-  const memoryBlock = recall.length > 0
-    ? `Relevant memories about this user:\n${recall
-        .map((r, i) => `${i + 1}. [${r.item.kind}] ${r.item.kind === "fact" ? `${r.item.key}: ${r.item.value}` : r.item.content}`)
-        .join("\n")}`
-    : "";
+  const memoryBlock =
+    recall.length > 0
+      ? `Relevant memories about this user:\n${recall
+          .map(
+            (r, i) =>
+              `${i + 1}. [${r.item.kind}] ${r.item.kind === "fact" ? `${r.item.key}: ${r.item.value}` : r.item.content}`
+          )
+          .join("\n")}`
+      : "";
 
   const augmentedPrompt = augmentPrompt(args.prompt, options.systemPrompt, memoryBlock);
 

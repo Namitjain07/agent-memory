@@ -27,10 +27,7 @@ export class InMemoryAdapter implements MemoryAdapter {
     this.sessionIndex.set(item.sessionId, ids);
   }
 
-  async search(
-    queryVector: number[],
-    options: MemorySearchOptions
-  ): Promise<MemorySearchCandidate[]> {
+  async search(queryVector: number[], options: MemorySearchOptions): Promise<MemorySearchCandidate[]> {
     const ids = this.sessionIndex.get(options.sessionId) ?? [];
     const items: MemoryItem[] = [];
 

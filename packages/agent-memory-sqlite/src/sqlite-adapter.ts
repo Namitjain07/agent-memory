@@ -98,10 +98,7 @@ export class SQLiteAdapter implements MemoryAdapter {
     );
   }
 
-  async search(
-    queryVector: number[],
-    options: MemorySearchOptions
-  ): Promise<MemorySearchCandidate[]> {
+  async search(queryVector: number[], options: MemorySearchOptions): Promise<MemorySearchCandidate[]> {
     const limit = options.limit ?? 20;
     const where: string[] = ["session_id = ?"];
     const params: unknown[] = [options.sessionId];
@@ -112,7 +109,9 @@ export class SQLiteAdapter implements MemoryAdapter {
     }
     if (options.tiers && options.tiers.length > 0) {
       // Items with NULL tier are treated as "session" tier for backward compatibility
-      const conditions = options.tiers.map(() => "(tier = ? OR (tier IS NULL AND ? = 'session'))").join(" OR ");
+      const conditions = options.tiers
+        .map(() => "(tier = ? OR (tier IS NULL AND ? = 'session'))")
+        .join(" OR ");
       where.push(`(${conditions})`);
       for (const tier of options.tiers) {
         params.push(tier, tier);
@@ -163,8 +162,7 @@ export class SQLiteAdapter implements MemoryAdapter {
     if (data.key !== undefined) pushUpdate("key_name", data.key);
     if (data.value !== undefined) pushUpdate("value_text", data.value);
     if (data.importance !== undefined) pushUpdate("importance", data.importance);
-    if (data.embedding !== undefined)
-      pushUpdate("embedding", JSON.stringify(data.embedding));
+    if (data.embedding !== undefined) pushUpdate("embedding", JSON.stringify(data.embedding));
     if (data.metadata !== undefined) pushUpdate("metadata", JSON.stringify(data.metadata));
     if (data.timestamp !== undefined) pushUpdate("timestamp", data.timestamp);
     if (data.fromTimestamp !== undefined) pushUpdate("from_timestamp", data.fromTimestamp);
@@ -180,16 +178,12 @@ export class SQLiteAdapter implements MemoryAdapter {
     }
 
     values.push(id);
-    this.db
-      .prepare(`UPDATE ${this.tableName} SET ${updates.join(", ")} WHERE id = ?`)
-      .run(...values);
+    this.db.prepare(`UPDATE ${this.tableName} SET ${updates.join(", ")} WHERE id = ?`).run(...values);
   }
 
   async getBySession(sessionId: string): Promise<MemoryItem[]> {
     const rows = this.db
-      .prepare(
-        `SELECT * FROM ${this.tableName} WHERE session_id = ? ORDER BY timestamp ASC`
-      )
+      .prepare(`SELECT * FROM ${this.tableName} WHERE session_id = ? ORDER BY timestamp ASC`)
       .all(sessionId) as MemoryRow[];
     return rows.map((row) => this.fromRow(row));
   }
@@ -206,9 +200,7 @@ export class SQLiteAdapter implements MemoryAdapter {
   }
 
   private createDatabase(dbPath: string = ":memory:"): SqliteDatabaseLike {
-    const BetterSqlite3 = requireModule("better-sqlite3") as new (
-      path: string
-    ) => SqliteDatabaseLike;
+    const BetterSqlite3 = requireModule("better-sqlite3") as new (path: string) => SqliteDatabaseLike;
     return new BetterSqlite3(dbPath);
   }
 
@@ -260,18 +252,13 @@ export class SQLiteAdapter implements MemoryAdapter {
       metadata: item.metadata ? JSON.stringify(item.metadata) : null,
       from_timestamp: item.kind === "summary" ? item.fromTimestamp : null,
       to_timestamp: item.kind === "summary" ? item.toTimestamp : null,
-      replaced_entry_ids:
-        item.kind === "summary" ? JSON.stringify(item.replacedEntryIds) : null
+      replaced_entry_ids: item.kind === "summary" ? JSON.stringify(item.replacedEntryIds) : null
     };
   }
 
   private fromRow(row: MemoryRow): MemoryItem {
-    const embedding = row.embedding
-      ? (JSON.parse(row.embedding) as number[])
-      : undefined;
-    const metadata = row.metadata
-      ? (JSON.parse(row.metadata) as Record<string, unknown>)
-      : undefined;
+    const embedding = row.embedding ? (JSON.parse(row.embedding) as number[]) : undefined;
+    const metadata = row.metadata ? (JSON.parse(row.metadata) as Record<string, unknown>) : undefined;
     const optionalFields = {
       ...(embedding ? { embedding } : {}),
       ...(metadata ? { metadata } : {})
@@ -320,9 +307,7 @@ export class SQLiteAdapter implements MemoryAdapter {
       content: row.content ?? "",
       fromTimestamp: row.from_timestamp ?? row.timestamp,
       toTimestamp: row.to_timestamp ?? row.timestamp,
-      replacedEntryIds: row.replaced_entry_ids
-        ? (JSON.parse(row.replaced_entry_ids) as string[])
-        : []
+      replacedEntryIds: row.replaced_entry_ids ? (JSON.parse(row.replaced_entry_ids) as string[]) : []
     };
   }
 }

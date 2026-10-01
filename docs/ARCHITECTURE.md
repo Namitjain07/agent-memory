@@ -67,26 +67,26 @@ All non-core packages declare `@namitjain.india/agent-memory` as a `peerDependen
 
 `packages/agent-memory/src/`
 
-| File | Purpose |
-|---|---|
-| `index.ts` | Public entry — exports `AgentMemory`, types |
-| `memory.ts` | `AgentMemory` class — main API |
-| `types.ts` | Public TypeScript types (`MemoryItem`, `RememberOptions`, etc.) |
-| `errors.ts` | `MemoryError` hierarchy + codes |
-| `middleware/with-memory.ts` | `withMemory()` — wraps any chat-completion call |
-| `providers/index.ts` | Provider registry (OpenAI, Cohere, Voyage, …) |
-| `scoring/hybrid.ts` | BM25 + vector + recency + importance scorer |
-| `scoring/bm25.ts` | BM25 implementation |
-| `scoring/vector.ts` | Cosine similarity |
-| `scoring/recency.ts` | Exponential decay over time |
-| `adapters/in-memory.ts` | Default adapter (Map-based) |
-| `adapters/adapter.ts` | Adapter interface |
-| `utils/http.ts` | `fetch`-based HTTP client with retry/timeout |
-| `utils/encryption.ts` | AES-256-GCM |
-| `utils/pii.ts` | Email / phone / API-key redaction |
-| `utils/lru.ts` | LRU cache |
-| `utils/memory-ops.ts` | Dedup + merge + summarise helpers |
-| `graph/` | Optional `MemoryGraph` (PageRank, spreading activation) |
+| File                        | Purpose                                                         |
+| --------------------------- | --------------------------------------------------------------- |
+| `index.ts`                  | Public entry — exports `AgentMemory`, types                     |
+| `memory.ts`                 | `AgentMemory` class — main API                                  |
+| `types.ts`                  | Public TypeScript types (`MemoryItem`, `RememberOptions`, etc.) |
+| `errors.ts`                 | `MemoryError` hierarchy + codes                                 |
+| `middleware/with-memory.ts` | `withMemory()` — wraps any chat-completion call                 |
+| `providers/index.ts`        | Provider registry (OpenAI, Cohere, Voyage, …)                   |
+| `scoring/hybrid.ts`         | BM25 + vector + recency + importance scorer                     |
+| `scoring/bm25.ts`           | BM25 implementation                                             |
+| `scoring/vector.ts`         | Cosine similarity                                               |
+| `scoring/recency.ts`        | Exponential decay over time                                     |
+| `adapters/in-memory.ts`     | Default adapter (Map-based)                                     |
+| `adapters/adapter.ts`       | Adapter interface                                               |
+| `utils/http.ts`             | `fetch`-based HTTP client with retry/timeout                    |
+| `utils/encryption.ts`       | AES-256-GCM                                                     |
+| `utils/pii.ts`              | Email / phone / API-key redaction                               |
+| `utils/lru.ts`              | LRU cache                                                       |
+| `utils/memory-ops.ts`       | Dedup + merge + summarise helpers                               |
+| `graph/`                    | Optional `MemoryGraph` (PageRank, spreading activation)         |
 
 ## Data flow — `remember()`
 
@@ -115,23 +115,23 @@ All non-core packages declare `@namitjain.india/agent-memory` as a `peerDependen
 
 - `remember()` is async; no internal queuing.
 - Adapter writes are sequential per item but parallel across items if the caller passes an array.
-- The LRU embedding cache is keyed on the *exact* text — same text = same embedding, even across requests.
+- The LRU embedding cache is keyed on the _exact_ text — same text = same embedding, even across requests.
 - `AbortSignal` propagates through `remember()` and `recall()`. Cancellation is checked between async hops (after embedding, before persistence, before adapter read).
 
 ## Error model
 
 All errors are `MemoryError` instances with a `code` string:
 
-| Code | When |
-|---|---|
-| `EMBEDDING_FAILED` | `embedFn()` threw or returned invalid shape |
-| `ADAPTER_WRITE_FAILED` | Adapter rejected the write |
-| `ADAPTER_READ_FAILED` | Adapter rejected the read |
-| `INVALID_ENVELOPE` | Encrypted envelope is malformed or tampered |
-| `INVALID_KEY` | Decryption key is wrong length or shape |
-| `TIMEOUT` | Adapter / embedding call exceeded the timeout |
-| `ABORTED` | Caller cancelled via `AbortSignal` |
-| `INVALID_ARGUMENT` | Caller passed bad arguments |
+| Code                   | When                                          |
+| ---------------------- | --------------------------------------------- |
+| `EMBEDDING_FAILED`     | `embedFn()` threw or returned invalid shape   |
+| `ADAPTER_WRITE_FAILED` | Adapter rejected the write                    |
+| `ADAPTER_READ_FAILED`  | Adapter rejected the read                     |
+| `INVALID_ENVELOPE`     | Encrypted envelope is malformed or tampered   |
+| `INVALID_KEY`          | Decryption key is wrong length or shape       |
+| `TIMEOUT`              | Adapter / embedding call exceeded the timeout |
+| `ABORTED`              | Caller cancelled via `AbortSignal`            |
+| `INVALID_ARGUMENT`     | Caller passed bad arguments                   |
 
 ## Extension points
 
@@ -147,7 +147,7 @@ All errors are `MemoryError` instances with a `code` string:
 - **SQLite uses WAL** — multiple readers, single writer.
 - **pgvector uses HNSW** if you set it up; otherwise uses brute-force cosine.
 
-## What's *not* in the core
+## What's _not_ in the core
 
 To keep the core runtime-dep-free, the following are deliberately out of scope:
 

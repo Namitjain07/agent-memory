@@ -25,7 +25,7 @@ const TOKEN_RE = /[A-Za-z0-9]+/g;
 
 /** Tokenise a string into lowercase word tokens. */
 export function tokenize(text: string): string[] {
-  return (text.toLowerCase().match(TOKEN_RE) ?? []);
+  return text.toLowerCase().match(TOKEN_RE) ?? [];
 }
 
 /** Average document length across a corpus of items. */

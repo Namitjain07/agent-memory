@@ -112,7 +112,9 @@ export async function run(
   const dbPath = resolve(globalOptions.db ?? "./agent-memory.db");
   if (!existsSync(dbPath) && sub !== "help") {
     stderr.write(`[agent-memory] Database file not found: ${dbPath}\n`);
-    stderr.write(`[agent-memory] Create one with the @namitjain.india/agent-memory-sqlite adapter, or pass --db to point at an existing file.\n`);
+    stderr.write(
+      `[agent-memory] Create one with the @namitjain.india/agent-memory-sqlite adapter, or pass --db to point at an existing file.\n`
+    );
     return { exitCode: 1 };
   }
 

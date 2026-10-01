@@ -32,30 +32,15 @@ export {
   type AzureOpenAIProviderOptions
 } from "./openai-compatible";
 
-export {
-  cohereProvider,
-  type CohereProviderOptions
-} from "./cohere";
+export { cohereProvider, type CohereProviderOptions } from "./cohere";
 
-export {
-  googleProvider,
-  type GoogleProviderOptions
-} from "./google";
+export { googleProvider, type GoogleProviderOptions } from "./google";
 
-export {
-  anthropicProvider,
-  type AnthropicProviderOptions
-} from "./anthropic";
+export { anthropicProvider, type AnthropicProviderOptions } from "./anthropic";
 
-export {
-  voyageProvider,
-  type VoyageProviderOptions
-} from "./voyage";
+export { voyageProvider, type VoyageProviderOptions } from "./voyage";
 
-export {
-  ollamaProvider,
-  type OllamaProviderOptions
-} from "./ollama";
+export { ollamaProvider, type OllamaProviderOptions } from "./ollama";
 
 // ─── createProvider factory ───────────────────────────────────────────────────
 
@@ -95,15 +80,15 @@ export interface ProviderOptionsMap {
 export type ProviderName = keyof ProviderOptionsMap;
 
 // Overloads for full TypeScript type inference at the call site
-export function createProvider(name: "openai",    options: OpenAIProviderOptions):    MemoryProvider;
-export function createProvider(name: "nvidia",    options: NVIDIAProviderOptions):    MemoryProvider;
-export function createProvider(name: "mistral",   options: MistralProviderOptions):   MemoryProvider;
-export function createProvider(name: "azure",     options: AzureOpenAIProviderOptions): MemoryProvider;
-export function createProvider(name: "cohere",    options: CohereProviderOptions):    MemoryProvider;
-export function createProvider(name: "google",    options: GoogleProviderOptions):    MemoryProvider;
+export function createProvider(name: "openai", options: OpenAIProviderOptions): MemoryProvider;
+export function createProvider(name: "nvidia", options: NVIDIAProviderOptions): MemoryProvider;
+export function createProvider(name: "mistral", options: MistralProviderOptions): MemoryProvider;
+export function createProvider(name: "azure", options: AzureOpenAIProviderOptions): MemoryProvider;
+export function createProvider(name: "cohere", options: CohereProviderOptions): MemoryProvider;
+export function createProvider(name: "google", options: GoogleProviderOptions): MemoryProvider;
 export function createProvider(name: "anthropic", options: AnthropicProviderOptions): MemoryProvider;
-export function createProvider(name: "voyage",    options: VoyageProviderOptions):    MemoryProvider;
-export function createProvider(name: "ollama",    options?: OllamaProviderOptions):   MemoryProvider;
+export function createProvider(name: "voyage", options: VoyageProviderOptions): MemoryProvider;
+export function createProvider(name: "ollama", options?: OllamaProviderOptions): MemoryProvider;
 
 /**
  * Unified factory for all built-in providers.
@@ -129,15 +114,24 @@ export function createProvider(
   options?: ProviderOptionsMap[ProviderName]
 ): MemoryProvider {
   switch (name) {
-    case "openai":    return openaiProvider(options as OpenAIProviderOptions);
-    case "nvidia":    return nvidiaProvider((options ?? {}) as NVIDIAProviderOptions);
-    case "mistral":   return mistralProvider(options as MistralProviderOptions);
-    case "azure":     return azureOpenAIProvider(options as AzureOpenAIProviderOptions);
-    case "cohere":    return cohereProvider(options as CohereProviderOptions);
-    case "google":    return googleProvider(options as GoogleProviderOptions);
-    case "anthropic": return anthropicProvider(options as AnthropicProviderOptions);
-    case "voyage":    return voyageProvider(options as VoyageProviderOptions);
-    case "ollama":    return ollamaProvider((options ?? {}) as OllamaProviderOptions);
+    case "openai":
+      return openaiProvider(options as OpenAIProviderOptions);
+    case "nvidia":
+      return nvidiaProvider((options ?? {}) as NVIDIAProviderOptions);
+    case "mistral":
+      return mistralProvider(options as MistralProviderOptions);
+    case "azure":
+      return azureOpenAIProvider(options as AzureOpenAIProviderOptions);
+    case "cohere":
+      return cohereProvider(options as CohereProviderOptions);
+    case "google":
+      return googleProvider(options as GoogleProviderOptions);
+    case "anthropic":
+      return anthropicProvider(options as AnthropicProviderOptions);
+    case "voyage":
+      return voyageProvider(options as VoyageProviderOptions);
+    case "ollama":
+      return ollamaProvider((options ?? {}) as OllamaProviderOptions);
     default: {
       // Exhaustiveness guard
       const _never: never = name;

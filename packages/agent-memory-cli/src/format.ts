@@ -2,7 +2,10 @@
 
 import type { SqliteMemoryItem } from "./adapters.js";
 
-export function formatOutput(items: SqliteMemoryItem[], format: "table" | "json" | "tsv" | undefined): string {
+export function formatOutput(
+  items: SqliteMemoryItem[],
+  format: "table" | "json" | "tsv" | undefined
+): string {
   switch (format ?? "table") {
     case "json":
       return JSON.stringify(items.map(toPublic), null, 2);
@@ -51,7 +54,15 @@ function toPublic(item: SqliteMemoryItem): Record<string, unknown> {
 function toTsv(items: SqliteMemoryItem[]): string {
   const header = "id\tkind\ttier\tsessionId\ttimestamp\timportance\tcontent";
   const lines = items.map((i) =>
-    [i.id, i.kind, i.tier ?? "session", i.session_id, i.timestamp, i.importance, (i.content ?? "").replace(/\t/g, " ")].join("\t")
+    [
+      i.id,
+      i.kind,
+      i.tier ?? "session",
+      i.session_id,
+      i.timestamp,
+      i.importance,
+      (i.content ?? "").replace(/\t/g, " ")
+    ].join("\t")
   );
   return [header, ...lines].join("\n");
 }
@@ -72,12 +83,7 @@ function toTable(items: SqliteMemoryItem[]): string {
   const sep = "+" + widths.map((w) => "-".repeat(w + 2)).join("+") + "+";
   const headerLine = "|" + headers.map((h, idx) => ` ${h.padEnd(widths[idx]!)} `).join("|") + "|";
   const bodyLines = rows.map(
-    (r) =>
-      "|" +
-      headers
-        .map((h, idx) => ` ${String(r[h]).padEnd(widths[idx]!)} `)
-        .join("|") +
-      "|"
+    (r) => "|" + headers.map((h, idx) => ` ${String(r[h]).padEnd(widths[idx]!)} `).join("|") + "|"
   );
 
   return [sep, headerLine, sep, ...bodyLines, sep].join("\n");

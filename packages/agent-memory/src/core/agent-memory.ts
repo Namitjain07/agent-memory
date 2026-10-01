@@ -97,7 +97,9 @@ export class AgentMemory {
     };
     this.embedFn = options.embedding?.embedFn;
     this.embedBatchFn = options.embedding?.embedBatchFn;
-    this.embedCache = options.embedding?.cache ?? (this.embedFn || this.embedBatchFn ? new LRU<string, number[]>(1_000) : undefined);
+    this.embedCache =
+      options.embedding?.cache ??
+      (this.embedFn || this.embedBatchFn ? new LRU<string, number[]>(1_000) : undefined);
     this.debug = options.debug ?? false;
   }
 
@@ -154,7 +156,14 @@ export class AgentMemory {
     }
   }
 
-  async update(id: string, data: Partial<Pick<MemoryItem, "importance" | "embedding" | "metadata" | "content">> & { tier?: MemoryTier; userId?: string; agentId?: string }): Promise<void> {
+  async update(
+    id: string,
+    data: Partial<Pick<MemoryItem, "importance" | "embedding" | "metadata" | "content">> & {
+      tier?: MemoryTier;
+      userId?: string;
+      agentId?: string;
+    }
+  ): Promise<void> {
     try {
       await this.adapter.update(id, data);
     } catch (err) {
@@ -201,7 +210,9 @@ export class AgentMemory {
         }
       } catch (err) {
         if (this.debug) {
-          console.warn(`[agent-memory] Embedding failed during recall; falling back to recency+importance scoring. cause: ${(err as Error).message}`);
+          console.warn(
+            `[agent-memory] Embedding failed during recall; falling back to recency+importance scoring. cause: ${(err as Error).message}`
+          );
         }
       }
     }
@@ -230,7 +241,10 @@ export class AgentMemory {
     // Pre-compute keyword scores if keyword weight > 0
     const keywordMap =
       this.retrieval.weights.keyword > 0
-        ? bm25Scores(query, candidates.map((c) => c.item))
+        ? bm25Scores(
+            query,
+            candidates.map((c) => c.item)
+          )
         : new Map<string, number>();
 
     const now = Date.now();
@@ -239,9 +253,7 @@ export class AgentMemory {
     const scored = candidates
       .map((candidate) => {
         const item = candidate.item;
-        const similarity = queryVector
-          ? this.resolveSimilarity(candidate.similarity, item, queryVector)
-          : 0;
+        const similarity = queryVector ? this.resolveSimilarity(candidate.similarity, item, queryVector) : 0;
         const keyword = keywordMap.get(item.id) ?? 0;
         const recency = recencyScore(item.timestamp, now, this.retrieval.recencyLambda);
         const importance = clamp(item.importance ?? 0.5, 0, 1);
@@ -330,10 +342,7 @@ export class AgentMemory {
     return summary;
   }
 
-  async inject(
-    messages: MemoryMessage[],
-    options: InjectOptions = {}
-  ): Promise<MemoryMessage[]> {
+  async inject(messages: MemoryMessage[], options: InjectOptions = {}): Promise<MemoryMessage[]> {
     const query = options.query ?? this.lastUserMessage(messages)?.content;
     if (!query) {
       return [...messages];
@@ -344,25 +353,17 @@ export class AgentMemory {
       return [...messages];
     }
 
-    const memoryBlock =
-      options.format?.(recalled) ??
-      formatRecallResults(recalled, options.maxContentLength);
+    const memoryBlock = options.format?.(recalled) ?? formatRecallResults(recalled, options.maxContentLength);
     const memoryMessage: MemoryMessage = {
       role: options.role ?? "system",
       name: options.name ?? "memory",
       content: memoryBlock
     };
 
-    const stripped = messages.filter(
-      (message) => !(message.role === "system" && message.name === "memory")
-    );
+    const stripped = messages.filter((message) => !(message.role === "system" && message.name === "memory"));
     const insertAt = this.firstNonSystemIndex(stripped);
 
-    return [
-      ...stripped.slice(0, insertAt),
-      memoryMessage,
-      ...stripped.slice(insertAt)
-    ];
+    return [...stripped.slice(0, insertAt), memoryMessage, ...stripped.slice(insertAt)];
   }
 
   async getBySession(sessionId?: string): Promise<MemoryItem[]> {
@@ -409,7 +410,8 @@ export class AgentMemory {
       });
     }
 
-    const embedding = input.embedding !== undefined ? input.embedding : await this.tryEmbedSingle(input.content);
+    const embedding =
+      input.embedding !== undefined ? input.embedding : await this.tryEmbedSingle(input.content);
     const entry: MemoryEntry = {
       id: input.id ?? createMemoryId("entry"),
       kind: "entry",
@@ -530,7 +532,15 @@ export class AgentMemory {
     );
   }
 
-  private applyKindTierFilter(items: MemoryItem[], options: { kinds?: ReadonlyArray<MemoryItem["kind"]>; tiers?: ReadonlyArray<MemoryTier>; userId?: string; agentId?: string }): MemoryItem[] {
+  private applyKindTierFilter(
+    items: MemoryItem[],
+    options: {
+      kinds?: ReadonlyArray<MemoryItem["kind"]>;
+      tiers?: ReadonlyArray<MemoryTier>;
+      userId?: string;
+      agentId?: string;
+    }
+  ): MemoryItem[] {
     return items.filter((item) => {
       if (options.kinds && !options.kinds.includes(item.kind)) return false;
       if (options.tiers) {
@@ -587,9 +597,7 @@ export class AgentMemory {
   }
 
   private defaultSummary(entries: MemoryEntry[]): string {
-    const lines = entries.map(
-      (entry) => `- ${entry.role}: ${entry.content.replace(/\s+/g, " ").trim()}`
-    );
+    const lines = entries.map((entry) => `- ${entry.role}: ${entry.content.replace(/\s+/g, " ").trim()}`);
     return `Summary of previous conversation:\n${lines.join("\n")}`;
   }
 

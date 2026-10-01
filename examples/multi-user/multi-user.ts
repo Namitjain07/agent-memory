@@ -39,15 +39,10 @@ async function main() {
     "My favourite colour is purple.",
     "I'm allergic to shellfish."
   ]);
-  await simulateUserSession("alice", "session-2", [
-    "What colour do I like?",
-    "Can I eat shrimp pasta?"
-  ]);
+  await simulateUserSession("alice", "session-2", ["What colour do I like?", "Can I eat shrimp pasta?"]);
 
   // Bob — separate user, should NOT see Alice's memory.
-  await simulateUserSession("bob", "session-1", [
-    "My favourite colour is green."
-  ]);
+  await simulateUserSession("bob", "session-1", ["My favourite colour is green."]);
 
   const aliceStats = await memory.stats("session-2");
   console.log("\nAlice session-2 stats:", JSON.stringify(aliceStats, null, 2));

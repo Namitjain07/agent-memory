@@ -1,11 +1,7 @@
 export { InMemoryAdapter } from "./adapters/in-memory";
 export { AgentMemory } from "./core/agent-memory";
 export { withMemory } from "./middleware/with-memory";
-export {
-  createBatchEmbedFn,
-  createOpenAIEmbedFn,
-  createOpenAIBatchEmbedFn
-} from "./utils/embed-helpers";
+export { createBatchEmbedFn, createOpenAIEmbedFn, createOpenAIBatchEmbedFn } from "./utils/embed-helpers";
 
 // ─── Error classes ───────────────────────────────────────────────────────────
 export {
@@ -51,11 +47,7 @@ export { bm25Scores, tokenize } from "./utils/bm25";
 export { piiScan, redactPII, type PIIRedactOptions, type PIIScanResult, type PIICategory } from "./utils/pii";
 
 // ─── Scoring / merging utilities ─────────────────────────────────────────────
-export {
-  cosineSimilarity,
-  normalizeSimilarity,
-  clamp
-} from "./utils/math";
+export { cosineSimilarity, normalizeSimilarity, clamp } from "./utils/math";
 export { recencyScore } from "./utils/time";
 export { approximateTokenCount } from "./utils/tokens";
 export { deduplicateSimilarFacts, mergeSimilarEntries } from "./utils/memory-ops";
