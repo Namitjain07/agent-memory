@@ -75,11 +75,15 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --clean --external react",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "peerDependencies": {
     "@namitjain.india/agent-memory": ">=0.5.0",
     "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "publishConfig": {
     "access": "public",
