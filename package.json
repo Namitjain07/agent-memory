@@ -49,18 +49,18 @@
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.2.2",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "@vitest/mocker": "^5.0.3",
+    "@vitest/mocker": "^5.0.5",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.0.0",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.0.0",
-    "vitest": "^5.0.3"
+    "tsup": "^9.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "postcss": "^8.5.28",
